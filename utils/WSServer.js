@@ -88,7 +88,7 @@ class WSServer {
 
     send(reciever, data) {
         let sockets = SOCKETS.get(this);
-        let data = JSON.stringify(data);
+        data = JSON.stringify(data);
         if (sockets.has(reciever)) {
             sockets.get(reciever).send(data);
         }
@@ -96,7 +96,7 @@ class WSServer {
 
     sendMulti(recievers, data) {
         let sockets = SOCKETS.get(this);
-        let data = JSON.stringify(data);
+        data = JSON.stringify(data);
         for (let reciever of recievers) {
             if (sockets.has(reciever)) {
                 sockets.get(reciever).send(data);
@@ -106,7 +106,7 @@ class WSServer {
 
     sendAll(data) {
         let server = SERVERS.get(this);
-        let data = JSON.stringify(data);
+        data = JSON.stringify(data);
         server.clients.forEach(function (ws) {
             ws.send(data);
         });
@@ -115,7 +115,7 @@ class WSServer {
     sendAllBut(ignored, data) {
         let sockets = SOCKETS.get(this);
         let recievers = sockets.keys();
-        let data = JSON.stringify(data);
+        data = JSON.stringify(data);
         for (let reciever of recievers) {
             if (reciever == ignored) {
                 sockets.get(reciever).send(data);
