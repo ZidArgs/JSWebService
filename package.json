@@ -1,0 +1,11 @@
+{
+  "name": "webservice",
+  "version": "1.0.0",
+  "description": "helper for creating simple webservices",
+  "main": "index.js",
+  "author": "Denis Peters (ZidArgs)",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^7.2.1"
+  }
+}
