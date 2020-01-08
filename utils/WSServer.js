@@ -33,7 +33,7 @@ class WSServer {
             ws.on('message', (message) => {
                 let msg = JSON.parse(message);
                 if (msg.type == "pong") {
-                    this.isAlive = true;
+                    ws.isAlive = true;
                 } else {
                     ON_MESSAGE.get(this)(ws.UUID, msg);
                 }
