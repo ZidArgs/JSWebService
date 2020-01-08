@@ -72,6 +72,11 @@ class WSServer {
             ON_CLOSE.set(this, EMPTY_FN);
         }
     }
+    
+    has(reciever) {
+        let sockets = SOCKETS.get(this);
+        return sockets.has(reciever);
+    }
 
     close(reciever) {
         let sockets = SOCKETS.get(this);
