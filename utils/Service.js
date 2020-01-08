@@ -14,13 +14,13 @@ class Service {
 
     getWebSocket() {
         if (!SOCKETS.has(this)) {
-            let servers = SERVERS.get(this);
+            let server = SERVERS.get(this);
             let path = PATHS.get(this);
-            let server = new WebSocket.Server({noServer: true});
-            let wss = new WSServer(server);
-            SOCKETS.set(this, wss);
-            servers.addWebSocket(path, server);
-            return wss;
+            let wss = new WebSocket.Server({noServer: true});
+            server.addWebSocket(path, wss);
+            let svr = new WSServer(wss);
+            SOCKETS.set(this, svr);
+            return svr;
         } else {
             return SOCKETS.get(this);
         }

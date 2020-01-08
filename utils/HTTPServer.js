@@ -39,7 +39,6 @@ class HTTPServer {
         let sockets = new Map();
         let recievers = new Map();
         let server = HTTP.createServer().listen(port);
-
         server.on('request', async (request, response) => {
             const location = URL.parse(request.url, true);
             const method = request.method.toUpperCase();
@@ -80,19 +79,17 @@ class HTTPServer {
                 response.end(e);
             }
         });
-
         server.on('upgrade', (request, socket, head) => {
             const pathname = URL.parse(request.url).pathname;
             if (sockets.has(pathname)) {
                 let wss = sockets.get(pathname);
                 wss.handleUpgrade(request, socket, head, (ws) => {
-                    server.emit('connection', ws);
+                    wss.emit('connection', ws);
                 });
             } else {
                 socket.destroy();
             }
         });
-
         RECIEVERS.set(this, recievers);
         SOCKETS.set(this, sockets);
         SERVERS.set(this, server);
