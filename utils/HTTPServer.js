@@ -5,16 +5,31 @@ const SERVERS = new WeakMap();
 const SOCKETS = new WeakMap();
 const RECIEVERS = new WeakMap();
 
-function getHeader(options) {
+function getHeader(options = {}) {
     let res = {};
     res['Cache-Control'] = 'no-cache';
     if (typeof options == "object" && !Array.isArray(options)) {
-        if (!!options.json) {
-            res['Content-Type'] = 'application/json';
-        }
-        if (!!options.local) {
-            res['Access-Control-Allow-Origin'] = '*';
-            res['Access-Control-Allow-Headers'] = 'content-type, cache-control';
+        if (options.method == "OPTIONS") {
+            res['Content-Type'] = 'text/plain; charset=utf-8';
+            if (!!options.cors) {
+                res['Access-Control-Allow-Origin'] = '*';
+                res['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
+                res['Access-Control-Allow-Headers'] = 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
+                res['Access-Control-Max-Age'] = '1728000';
+            }
+            res['Content-Length'] = 0;
+        } else {
+            if (!!options.type) {
+                res['Content-Type'] = options.type;
+            } else {
+                res['Content-Type'] = 'text/plain; charset=utf-8';
+            }
+            if (!!options.cors) {
+                res['Access-Control-Allow-Origin'] = '*';
+                res['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
+                res['Access-Control-Allow-Headers'] = 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
+                res['Access-Control-Expose-Headers'] = 'Content-Length,Content-Range';
+            }
         }
     }
     return res;
@@ -35,7 +50,7 @@ function getRequestBody(request) {
 
 class HTTPServer {
 
-    constructor(port) {
+    constructor(port, enableCors = false) {
         let sockets = new Map();
         let recievers = new Map();
         let server = HTTP.createServer().listen(port);
@@ -44,8 +59,9 @@ class HTTPServer {
             const method = request.method.toUpperCase();
             try {
                 if (method == "OPTIONS") {
-                    response.writeHead(200, getHeader({
-                        local: !location.hostname || location.hostname == "localhost"
+                    response.writeHead(204, getHeader({
+                        cors: enableCors,
+                        method: method
                     }));
                     response.end();
                 } else {
@@ -60,13 +76,15 @@ class HTTPServer {
                         let reciever = recievers.get(location.pathname);
                         let data = await reciever(method, location.query, body);
                         response.writeHead(200, getHeader({
-                            json: true,
-                            local: !location.hostname || location.hostname == "localhost"
+                            type: 'application/json; charset=utf-8',
+                            cors: enableCors,
+                            method: method
                         }));
                         response.end(JSON.stringify(data));
                     } else {
-                        response.writeHead(400, getHeader({
-                            local: !location.hostname || location.hostname == "localhost"
+                        response.writeHead(404, getHeader({
+                            cors: enableCors,
+                            method: method
                         }));
                         response.end();
                     }
@@ -74,7 +92,8 @@ class HTTPServer {
             } catch (e) {
                 console.log("ERROR during response", e);
                 response.writeHead(500, getHeader({
-                    local: !location.hostname || location.hostname == "localhost"
+                    cors: enableCors,
+                    method: method
                 }));
                 response.end(e);
             }

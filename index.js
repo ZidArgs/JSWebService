@@ -14,9 +14,9 @@ const PORT = new WeakMap();
 
 class WebService {
 
-    constructor(port) {
+    constructor(port, enableCors) {
         port = getPort(port);
-        HTTP_SERVER.set(this, new HTTPServer(port));
+        HTTP_SERVER.set(this, new HTTPServer(port, enableCors));
         console.log(`WebService listening on port ${port}`);
         PORT.set(this, port);
     }
