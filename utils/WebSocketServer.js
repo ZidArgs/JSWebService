@@ -72,7 +72,7 @@ class WebSocketServer {
 
     handleUpgrade(request, socket, head) {
         this.#server.handleUpgrade(request, socket, head, (ws) => {
-            wss.emit('connection', ws);
+            this.#server.emit('connection', ws);
         });
     }
     
