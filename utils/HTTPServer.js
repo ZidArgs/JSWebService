@@ -1,10 +1,6 @@
 const HTTP = require('http');
 const URL = require('url');
 
-const SERVERS = new WeakMap();
-const SOCKETS = new WeakMap();
-const RECIEVERS = new WeakMap();
-
 function getHeader(options = {}) {
     let res = {};
     res['Cache-Control'] = 'no-cache';
@@ -50,9 +46,10 @@ function getRequestBody(request) {
 
 class HTTPServer {
 
+    #sockets = new Map();
+    #recievers = new Map();
+
     constructor(port, enableCors = false) {
-        let sockets = new Map();
-        let recievers = new Map();
         let server = HTTP.createServer().listen(port);
         server.on('request', async (request, response) => {
             const location = URL.parse(request.url, true);
@@ -72,8 +69,8 @@ class HTTPServer {
                             body = JSON.parse(body);
                         } catch (e) { }
                     }
-                    if (recievers.has(location.pathname)) {
-                        let reciever = recievers.get(location.pathname);
+                    if (this.#recievers.has(location.pathname)) {
+                        let reciever = this.#recievers.get(location.pathname);
                         let data = await reciever(method, location.query, body);
                         response.writeHead(200, getHeader({
                             type: 'application/json; charset=utf-8',
@@ -100,42 +97,33 @@ class HTTPServer {
         });
         server.on('upgrade', (request, socket, head) => {
             const pathname = URL.parse(request.url).pathname;
-            if (sockets.has(pathname)) {
-                let wss = sockets.get(pathname);
-                wss.handleUpgrade(request, socket, head, (ws) => {
-                    wss.emit('connection', ws);
-                });
+            if (this.#sockets.has(pathname)) {
+                let wss = this.#sockets.get(pathname);
+                wss.handleUpgrade(request, socket, head);
             } else {
                 socket.destroy();
             }
         });
-        RECIEVERS.set(this, recievers);
-        SOCKETS.set(this, sockets);
-        SERVERS.set(this, server);
     }
 
     addWebSocket(path, wss) {
-        let sockets = SOCKETS.get(this);
-        if (!sockets.has(path)) {
-            sockets.set(path, wss);
+        if (!this.#sockets.has(path)) {
+            this.#sockets.set(path, wss);
         }
     }
 
     removeWebSocket(path) {
-        let sockets = SOCKETS.get(this);
-        sockets.delete(path);
+        this.#sockets.delete(path);
     }
 
     addReciever(path, reciever) {
-        let recievers = RECIEVERS.get(this);
-        if (!recievers.has(path)) {
-            recievers.set(path, reciever);
+        if (!this.#recievers.has(path)) {
+            this.#recievers.set(path, reciever);
         }
     }
 
     removeReciever(path) {
-        let recievers = RECIEVERS.get(this);
-        recievers.delete(path);
+        this.#recievers.delete(path);
     }
 
 }

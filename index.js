@@ -1,5 +1,5 @@
-const HTTPServer = require('./utils/HTTPServer');
-const Service = require('./utils/Service');
+const HTTP = require('./utils/HTTPServer');
+const ServiceWrapper = require('./utils/ServiceWrapper');
 
 function getPort(value) {
     let port = parseInt(value);
@@ -9,21 +9,22 @@ function getPort(value) {
     return port;
 }
 
-const HTTP_SERVER = new WeakMap();
-const PORT = new WeakMap();
-
 class WebService {
 
+    #port = "";
+    #server = null;
+
     constructor(port, enableCors) {
-        port = getPort(port);
-        HTTP_SERVER.set(this, new HTTPServer(port, enableCors));
-        console.log(`WebService listening on port ${port}`);
-        PORT.set(this, port);
+        this.#port = getPort(port);
+        this.#server = new HTTP(this.#port, !!enableCors);
+        console.log(`WebService listening on port ${this.#port}`);
     }
 
-    registerService(Module, srv) {
-        new Module(new Service(HTTP_SERVER.get(this), srv));
-        console.log(`installed service: ${PORT.get(this)} => ${srv}`);
+    registerService(ServiceModule, srv) {
+        let wrapper = new ServiceWrapper(this.#server, srv);
+        let res = new ServiceModule(wrapper);
+        console.log(`installed service: ${this.#port} => ${srv}`);
+        return res;
     }
 
 }
