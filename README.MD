@@ -13,8 +13,8 @@ Any number of ServiceModules can be added to the WebService.\
 const WebService = require('webservice');
 // get any ServiceModule
 const ServiceModule = require('./ServiceModule.js');
-// open WebService on port 8080
-const service = new WebService(8080);
+// open WebService
+const service = new WebService(/*port*/ 8080, /*cors*/false);
 // register the ServiceModule to listen to the path '/service'
 service.registerService(ServiceModule, "/service");
 ```
