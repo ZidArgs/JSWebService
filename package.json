@@ -1,6 +1,6 @@
 {
   "name": "webservice",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "helper for creating simple webservices",
   "main": "index.js",
   "author": "Denis Peters (ZidArgs)",
