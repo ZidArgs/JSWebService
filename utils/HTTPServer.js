@@ -50,7 +50,8 @@ class HTTPServer {
     #recievers = new Map();
 
     constructor(port, enableCors = false) {
-        let server = HTTP.createServer().listen(port);
+        let server = HTTP.createServer();
+        server.listen(port);
         server.on('request', async (request, response) => {
             const location = URL.parse(request.url, true);
             const method = request.method.toUpperCase();
