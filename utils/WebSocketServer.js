@@ -31,10 +31,13 @@ class WebSocketServer {
             }));
             ws.on('message', (message) => {
                 let msg = JSON.parse(message);
-                if (msg.type == "pong") {
-                    ws.isAlive = true;
-                } else {
-                    this.#onmessage(ws.UUID, msg);
+                switch(msg.type) {
+                    case "pong":
+                        ws.isAlive = true;
+                    break;
+                    case "data":
+                        this.#onmessage(ws.UUID, msg.body);
+                    break;
                 }
             });
             ws.on('close', () => {
@@ -88,35 +91,47 @@ class WebSocketServer {
     }
 
     send(reciever, data) {
-        data = JSON.stringify(data);
+        let msg = JSON.stringify({
+            type: "data",
+            body: data
+        });
         if (this.#sockets.has(reciever)) {
-            this.#sockets.get(reciever).send(data);
+            this.#sockets.get(reciever).send(msg);
         }
     }
 
     sendMulti(recievers, data) {
-        data = JSON.stringify(data);
+        let msg = JSON.stringify({
+            type: "data",
+            body: data
+        });
         for (let reciever of recievers) {
             if (this.#sockets.has(reciever)) {
-                this.#sockets.get(reciever).send(data);
+                this.#sockets.get(reciever).send(msg);
             }
         }
     }
 
     sendAll(data) {
         let recievers = this.#sockets.keys();
-        data = JSON.stringify(data);
+        let msg = JSON.stringify({
+            type: "data",
+            body: data
+        });
         for (let reciever of recievers) {
-            this.#sockets.get(reciever).send(data);
+            this.#sockets.get(reciever).send(msg);
         }
     }
 
     sendAllBut(ignored, data) {
         let recievers = this.#sockets.keys();
-        data = JSON.stringify(data);
+        let msg = JSON.stringify({
+            type: "data",
+            body: data
+        });
         for (let reciever of recievers) {
             if (reciever == ignored) {
-                this.#sockets.get(reciever).send(data);
+                this.#sockets.get(reciever).send(msg);
             }
         }
     }
