@@ -17,7 +17,7 @@ class MessageBuffer {
             callback(this.#messages.shift());
         }
     }
-    
+
 }
 
 const SERVICE_URL = new WeakMap();
@@ -52,17 +52,15 @@ function openSocket(that, url, onMessage) {
                     case "ping":
                         clearTimeout(TIMEOUT.get(this));
                         TIMEOUT.set(this, setTimeout(()=>socket.close(), PING_OUT));
-                        socket.send(JSON.stringify({
-                            type:"pong",
-                            time:msg.time
-                        }));
+                        msg.type = "pong";
+                        socket.send(JSON.stringify(msg));
                     break;
                     case "uuid":
-                        SOCKET_ID.set(this, msg.body);
+                        SOCKET_ID.set(this, msg.data);
                         resolve();
                     break;
                     case "data":
-                        onMessage(msg.body);
+                        onMessage(msg.data);
                     break;
                 }
             }.bind(that));
@@ -108,7 +106,7 @@ export default class WebSocketClient {
         }
         let msg = JSON.stringify({
             type: "data",
-            body: data
+            data: data
         });
         if (SOCKET.has(this)) {
             let socket = SOCKET.get(this);

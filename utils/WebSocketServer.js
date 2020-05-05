@@ -27,7 +27,7 @@ class WebSocketServer {
             this.#sockets.set(ws.UUID, ws);
             ws.send(JSON.stringify({
                 type: 'uuid',
-                body: ws.UUID
+                data: ws.UUID
             }));
             ws.on('message', (message) => {
                 let msg = JSON.parse(message);
@@ -36,7 +36,7 @@ class WebSocketServer {
                         ws.isAlive = true;
                     break;
                     case "data":
-                        this.#onmessage(ws.UUID, msg.body);
+                        this.#onmessage(ws.UUID, msg.data);
                     break;
                 }
             });
@@ -93,7 +93,7 @@ class WebSocketServer {
     send(reciever, data) {
         let msg = JSON.stringify({
             type: "data",
-            body: data
+            data: data
         });
         if (this.#sockets.has(reciever)) {
             this.#sockets.get(reciever).send(msg);
@@ -103,7 +103,7 @@ class WebSocketServer {
     sendMulti(recievers, data) {
         let msg = JSON.stringify({
             type: "data",
-            body: data
+            data: data
         });
         for (let reciever of recievers) {
             if (this.#sockets.has(reciever)) {
@@ -116,7 +116,7 @@ class WebSocketServer {
         let recievers = this.#sockets.keys();
         let msg = JSON.stringify({
             type: "data",
-            body: data
+            data: data
         });
         for (let reciever of recievers) {
             this.#sockets.get(reciever).send(msg);
@@ -127,7 +127,7 @@ class WebSocketServer {
         let recievers = this.#sockets.keys();
         let msg = JSON.stringify({
             type: "data",
-            body: data
+            data: data
         });
         for (let reciever of recievers) {
             if (reciever == ignored) {
