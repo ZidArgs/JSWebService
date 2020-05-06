@@ -15,7 +15,7 @@ class Ping {
         this.ping();
     }
 
-    #setNextTimeout() {
+    #setNextTimeout = () => {
         clearTimeout(this.#timeout);
         if (this.#maxtime > 0) {
             this.#timeout = setTimeout(()=>{
