@@ -9,7 +9,7 @@ function getHeader(options = {}) {
             res['Content-Type'] = 'text/plain; charset=utf-8';
             if (!!options.cors) {
                 res['Access-Control-Allow-Origin'] = '*';
-                res['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
+                res['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
                 res['Access-Control-Allow-Headers'] = 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
                 res['Access-Control-Max-Age'] = '1728000';
             }
@@ -22,7 +22,7 @@ function getHeader(options = {}) {
             }
             if (!!options.cors) {
                 res['Access-Control-Allow-Origin'] = '*';
-                res['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
+                res['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
                 res['Access-Control-Allow-Headers'] = 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
                 res['Access-Control-Expose-Headers'] = 'Content-Length,Content-Range';
             }
@@ -42,6 +42,20 @@ function getRequestBody(request) {
             resolve(res);
         });
     });
+}
+
+async function callReciever(recievers, path, method, query, body) {
+        let parts = path.replace(/\/$/, "").split("/");
+        let params = [];
+        while (!!parts.length) {
+            let uri = parts.join("/");
+            if (recievers.has(uri)) {
+                let reciever = recievers.get(uri);
+                return await reciever(method, params, query, body);
+            }
+            params.unshift(parts.pop());
+        }
+        return {status: 404};
 }
 
 class HTTPServer {
@@ -64,27 +78,38 @@ class HTTPServer {
                     response.end();
                 } else {
                     const headers = request.headers;
-                    let body = await getRequestBody(request);
-                    if (headers['content-type'] == 'application/json') {
-                        try {
-                            body = JSON.parse(body);
-                        } catch (e) { }
+                    const pathname = location.pathname;
+                    const query = location.query;
+                    let body = null;
+                    if (method == "POST" || method == "PUT") {
+                        body = await getRequestBody(request);
+                        if (headers['content-type'].indexOf('application/json') >= 0) {
+                            try {
+                                body = JSON.parse(body);
+                            } catch (e) {
+                                console.log(e);
+                            }
+                        }
                     }
-                    if (this.#recievers.has(location.pathname)) {
-                        let reciever = this.#recievers.get(location.pathname);
-                        let data = await reciever(method, location.query, body);
-                        response.writeHead(200, getHeader({
+                    // call the reciever that matches most specific
+                    let res = await callReciever(this.#recievers, pathname, method, query, body);
+                    if (res.data != null) {
+                        response.writeHead(res.status, getHeader({
                             type: 'application/json; charset=utf-8',
                             cors: enableCors,
                             method: method
                         }));
-                        response.end(JSON.stringify(data));
+                        response.end(JSON.stringify(res.data));
                     } else {
-                        response.writeHead(404, getHeader({
+                        response.writeHead(res.status, getHeader({
                             cors: enableCors,
                             method: method
                         }));
-                        response.end();
+                        if (res.text != null) {
+                            response.end(res.text);
+                        } else {
+                            response.end();
+                        }
                     }
                 }
             } catch (e) {
@@ -93,7 +118,7 @@ class HTTPServer {
                     cors: enableCors,
                     method: method
                 }));
-                response.end(e);
+                response.end(e.stack);
             }
         });
         server.on('upgrade', (request, socket, head) => {

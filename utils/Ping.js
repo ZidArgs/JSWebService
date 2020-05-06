@@ -2,7 +2,7 @@
 
 class Ping {
 
-    #maxtime = 10000;
+    #maxtime = 30000;
     #server = null;
     #timeout = null;
 
@@ -15,10 +15,30 @@ class Ping {
         this.ping();
     }
 
-    ping() {
-        if (!!this.#timeout) {
-            clearTimeout(this.#timeout);
+    #setNextTimeout() {
+        clearTimeout(this.#timeout);
+        if (this.#maxtime > 0) {
+            this.#timeout = setTimeout(()=>{
+                this.ping();
+            }, this.#maxtime);
+        } else {
+            this.#timeout = undefined;
         }
+    }
+
+    set maxTime(value) {
+        value = parseInt(value);
+        if (!isNaN(value) && value >= 0) {
+            this.#maxtime = value;
+            this.#setNextTimeout();
+        }
+    }
+
+    get maxTime() {
+        return this.#maxtime;
+    }
+
+    ping() {
         this.#server.clients.forEach(function (ws) {
             if (ws.isAlive === false) {
                 return ws.terminate();
@@ -29,7 +49,7 @@ class Ping {
                 time: new Date
             }));
         });
-        this.#timeout = setTimeout(()=>this.ping(), this.#maxtime);
+        this.#setNextTimeout();
     }
 
 }

@@ -23,11 +23,11 @@ class WebSocketServer {
     constructor() {
         this.#server.on('connection', (ws) => {
             ws.isAlive = true;
-            ws.UUID = createUUID();
-            this.#sockets.set(ws.UUID, ws);
+            ws.id = createUUID();
+            this.#sockets.set(ws.id, ws);
             ws.send(JSON.stringify({
                 type: 'uuid',
-                data: ws.UUID
+                data: ws.id
             }));
             ws.on('message', (message) => {
                 let msg = JSON.parse(message);
@@ -36,15 +36,15 @@ class WebSocketServer {
                         ws.isAlive = true;
                     break;
                     case "data":
-                        this.#onmessage(ws.UUID, msg.data);
+                        this.#onmessage(ws.id, msg.data);
                     break;
                 }
             });
             ws.on('close', () => {
-                this.#sockets.delete(ws.UUID);
-                this.#onclose(ws.UUID);
+                this.#sockets.delete(ws.id);
+                this.#onclose(ws.id);
             });
-            this.#onconnect(ws.UUID);
+            this.#onconnect(ws.id);
         });
         new Ping(this.#server, PING_OUT);
     }
