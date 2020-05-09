@@ -1,5 +1,3 @@
-
-
 class Ping {
 
     #maxtime = 30000;

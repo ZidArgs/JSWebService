@@ -1,6 +1,6 @@
-const WebSocket = require('ws');
+const WebSocket = require("ws");
 const crypto = require("crypto");
-const Ping = require('./Ping');
+const Ping = require("./Ping.js");
 
 const PING_OUT = 10000;
 const EMPTY_FN = function() {};

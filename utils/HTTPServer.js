@@ -1,32 +1,44 @@
-const HTTP = require('http');
-const URL = require('url');
+const HTTP = require("http");
+const URL = require("url");
 
-function getHeader(options = {}) {
+function getOptionsHeader(cors) {
     let res = {};
-    res['Cache-Control'] = 'no-cache';
-    if (typeof options == "object" && !Array.isArray(options)) {
-        if (options.method == "OPTIONS") {
-            res['Content-Type'] = 'text/plain; charset=utf-8';
-            if (!!options.cors) {
-                res['Access-Control-Allow-Origin'] = '*';
-                res['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
-                res['Access-Control-Allow-Headers'] = 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
-                res['Access-Control-Max-Age'] = '1728000';
-            }
-            res['Content-Length'] = 0;
-        } else {
-            if (!!options.type) {
-                res['Content-Type'] = options.type;
-            } else {
-                res['Content-Type'] = 'text/plain; charset=utf-8';
-            }
-            if (!!options.cors) {
-                res['Access-Control-Allow-Origin'] = '*';
-                res['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
-                res['Access-Control-Allow-Headers'] = 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
-                res['Access-Control-Expose-Headers'] = 'Content-Length,Content-Range';
-            }
-        }
+    res['Content-Type'] = 'text/plain; charset=utf-8';
+    if (!!cors) {
+        res['Access-Control-Allow-Origin'] = '*';
+        res['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+        res['Access-Control-Allow-Headers'] = 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
+        res['Access-Control-Max-Age'] = '1728000';
+    }
+    res['Content-Length'] = 0;
+    return res;
+}
+
+function getHeader(cors, options) {
+    let res = {};
+    if (options == null) {
+        options = {};
+    }
+    if (options.nocache != null && options.nocache === true) {
+        res['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+        res['Expires'] = '-1';
+    }
+    if (options.type != null) {
+        res['Content-Type'] = options.type;
+    } else {
+        res['Content-Type'] = 'text/plain; charset=utf-8';
+    }
+    if (options.length != null) {
+        res['Content-Length'] = options.length;
+    }
+    if (options.language != null) {
+        res['Content-Language'] = options.language;
+    }
+    if (!!cors) {
+        res['Access-Control-Allow-Origin'] = '*';
+        res['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+        res['Access-Control-Allow-Headers'] = 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
+        res['Access-Control-Expose-Headers'] = 'Content-Length,Content-Range';
     }
     return res;
 }
@@ -45,17 +57,20 @@ function getRequestBody(request) {
 }
 
 async function callReciever(recievers, path, method, query, body) {
-        let parts = path.replace(/\/$/, "").split("/");
-        let params = [];
-        while (!!parts.length) {
-            let uri = parts.join("/");
-            if (recievers.has(uri)) {
-                let reciever = recievers.get(uri);
-                return await reciever(method, params, query, body);
-            }
-            params.unshift(parts.pop());
+    if (path.startsWith("/")) {
+        path = path.slice(1);
+    }
+    let parts = path.split("/");
+    let params = [];
+    while (!!parts.length) {
+        let uri = `/${parts.join("/")}`;
+        if (recievers.has(uri)) {
+            let reciever = recievers.get(uri);
+            return await reciever(method, params, query, body);
         }
-        return {status: 404};
+        params.unshift(parts.pop());
+    }
+    return {status: 404};
 }
 
 class HTTPServer {
@@ -71,10 +86,7 @@ class HTTPServer {
             const method = request.method.toUpperCase();
             try {
                 if (method == "OPTIONS") {
-                    response.writeHead(204, getHeader({
-                        cors: enableCors,
-                        method: method
-                    }));
+                    response.writeHead(204, getOptionsHeader(enableCors));
                     response.end();
                 } else {
                     const headers = request.headers;
@@ -93,32 +105,35 @@ class HTTPServer {
                     }
                     // call the reciever that matches most specific
                     let res = await callReciever(this.#recievers, pathname, method, query, body);
-                    if (res.data != null) {
-                        response.writeHead(res.status, getHeader({
-                            type: 'application/json; charset=utf-8',
-                            cors: enableCors,
-                            method: method
-                        }));
-                        response.end(JSON.stringify(res.data));
-                    } else {
-                        response.writeHead(res.status, getHeader({
-                            cors: enableCors,
-                            method: method
-                        }));
-                        if (res.text != null) {
-                            response.end(res.text);
+                    if (res != null && res.status != null) {
+                        if (res.content != null) {
+                            response.writeHead(res.status, getHeader(enableCors, res.options));
+                            response.end(res.content);
+                        } else if (res.stream != null) {
+                            response.writeHead(res.status, getHeader(enableCors, res.options));
+                            res.stream.pipe(response);
+                        } else if (res.json != null) {
+                            response.writeHead(res.status, getHeader(enableCors, {
+                                type: "application/json; charset=utf-8",
+                            }));
+                            response.end(JSON.stringify(res.json));
                         } else {
+                            response.writeHead(res.status, getHeader(enableCors, res.options));
                             response.end();
                         }
+                    } else {
+                        throw new Error("response without status returned from service reciever");
                     }
                 }
             } catch (e) {
-                console.log("ERROR during response", e);
-                response.writeHead(500, getHeader({
-                    cors: enableCors,
-                    method: method
+                console.log(`ERROR during response for ${request.url}`, e);
+                response.writeHead(500, getHeader(enableCors, {
+                    type: "application/json; charset=utf-8",
                 }));
-                response.end(e.stack);
+                response.end(JSON.stringify({
+                    url: request.url,
+                    error: e
+                }));
             }
         });
         server.on('upgrade', (request, socket, head) => {

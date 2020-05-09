@@ -1,5 +1,5 @@
-const HTTP = require('./utils/HTTPServer');
-const ServiceWrapper = require('./utils/ServiceWrapper');
+const HTTP = require("./utils/HTTPServer.js");
+const ServiceWrapper = require("./utils/ServiceWrapper.js");
 
 function getPort(value) {
     let port = parseInt(value);
@@ -20,10 +20,13 @@ class WebService {
         console.log(`WebService listening on port ${this.#port}`);
     }
 
-    registerService(ServiceModule, srv) {
-        let wrapper = new ServiceWrapper(this.#server, srv);
-        let res = new ServiceModule(wrapper);
-        console.log(`installed service: ${this.#port} => ${srv}`);
+    registerService(ServiceModule, endpoint, options) {
+        if (!endpoint.startsWith("/")) {
+            endpoint = `/${endpoint}`;
+        }
+        let wrapper = new ServiceWrapper(this.#server, endpoint);
+        let res = new ServiceModule(wrapper, options);
+        console.log(`installed service: ${this.#port} => ${endpoint}`);
         return res;
     }
 

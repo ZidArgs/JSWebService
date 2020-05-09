@@ -1,4 +1,4 @@
-const WebSocket = require('./WebSocketServer');
+const WebSocket = require("./WebSocketServer.js");
 
 class ServiceWrapper {
 
