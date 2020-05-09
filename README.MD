@@ -37,7 +37,7 @@ service.registerService(StaticService, "/static", {
      // set the folder to be read to './mycontent' (optional; default = './static')
     serveFolder: "./mycontent",
     // set default index files (optional; default = ["index.html", "index.htm"])
-    defaultIndex: "foobar.html supi.htm",
+    defaultIndex: "index.html index.json",
      // set mimeTypes (optional)
      /*
      default = {
