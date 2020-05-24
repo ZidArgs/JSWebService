@@ -100,7 +100,7 @@ class ServiceModule {
                 status: 200,
                 content: "<div>some html content</div>",
                 options: { /*optional*/
-                    type: "application/json; charset=utf-8",
+                    type: "text/html; charset=utf-8",
                     nocache: false,
                     length: 28,
                     language: "en"
