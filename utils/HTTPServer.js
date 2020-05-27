@@ -106,10 +106,12 @@ class HTTPServer {
                     }
                     // parse cookies
                     let cookies = {};
-                    request.headers.cookie.split(";").forEach(function(cookie) {
-                        var parts = cookie.split('=');
-                        cookies[parts.shift().trim()] = decodeURI(parts.join('='));
-                    });
+                    if (request.headers.cookie != null) {
+                        request.headers.cookie.split(";").forEach(function(cookie) {
+                            var parts = cookie.split('=');
+                            cookies[parts.shift().trim()] = decodeURI(parts.join('='));
+                        });
+                    }
                     // call the reciever that matches most specific
                     let res = await callReciever(this.#recievers, pathname, method, query, body, cookies);
                     if (res != null && res.status != null) {
