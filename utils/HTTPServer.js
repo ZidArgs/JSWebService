@@ -60,7 +60,7 @@ async function callReciever(recievers, path, method, query, body) {
     if (path.startsWith("/")) {
         path = path.slice(1);
     }
-    let parts = path.split("/");
+    let parts = path.split("/").map(p => decodeURI(p));
     let params = [];
     while (!!parts.length) {
         let uri = `/${parts.join("/")}`;
