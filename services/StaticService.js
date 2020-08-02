@@ -61,7 +61,7 @@ class StaticService {
         server.onrequest = (method, params, query, body) => this.#onrequest(method, params, query, body);
     }
 
-    #getFile = function (filePath) {
+    #getFile = function(filePath) {
         if (fs.existsSync(filePath)) {
             let stat = fs.statSync(filePath);
             if (stat.isFile(filePath)) {
@@ -82,7 +82,7 @@ class StaticService {
         return null;
     }
     
-    #getMimeType(file) {
+    #getMimeType = function(file) {
         for (let entry of this.#mimeTypes) {
             if (entry.pattern.test(file)) {
                 return entry.type;
