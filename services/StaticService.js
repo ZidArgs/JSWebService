@@ -81,6 +81,15 @@ class StaticService {
 
         return null;
     }
+    
+    #getMimeType(file) {
+        for (let entry of this.#mimeTypes) {
+            if (entry.pattern.test(file)) {
+                return entry.type;
+            }
+        }
+        return DEFAULT_MIME_TYPE;
+    }
 
     #onrequest = async function(method, params, query, body) {
         if (method == "GET") {
@@ -89,13 +98,7 @@ class StaticService {
             if (file != null && file.startsWith(this.#serveFolder)) {
                 let stat = fs.statSync(file);
                 let readStream = fs.createReadStream(file);
-                let type = DEFAULT_MIME_TYPE;
-                for (let entry of this.#mimeTypes) {
-                    if (entry.pattern.test(file)) {
-                        type = entry.type;
-                        break;
-                    }
-                }
+                let type = this.#getMimeType(file);
                 return {
                     status: 200,
                     stream: readStream,
