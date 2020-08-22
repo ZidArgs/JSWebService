@@ -21,9 +21,7 @@ class WebService {
     }
 
     registerService(ServiceModule, endpoint, options) {
-        if (!endpoint.startsWith("/")) {
-            endpoint = `/${endpoint}`;
-        }
+        endpoint = `/${endpoint.replace(/^\/|\/$/, "")}`;
         let wrapper = new ServiceWrapper(this.#server, endpoint);
         let res = new ServiceModule(wrapper, options);
         console.log(`installed service: ${this.#port} => ${endpoint}`);

@@ -57,9 +57,7 @@ function getRequestBody(request) {
 }
 
 async function callReciever(recievers, path, method, query, body) {
-    if (path.startsWith("/")) {
-        path = path.slice(1);
-    }
+    path = path.replace(/(^\/|\/$)/g, "");
     let parts = path.split("/").map(p => decodeURI(p));
     let params = [];
     while (!!parts.length) {
@@ -146,7 +144,8 @@ class HTTPServer {
             }
         });
         server.on('upgrade', (request, socket, head) => {
-            const pathname = URL.parse(request.url).pathname;
+            let pathname = URL.parse(request.url).pathname;
+            pathname = `/${pathname.replace(/(^\/|\/$)/g, "")}`;
             if (this.#sockets.has(pathname)) {
                 let wss = this.#sockets.get(pathname);
                 wss.handleUpgrade(request, socket, head);
