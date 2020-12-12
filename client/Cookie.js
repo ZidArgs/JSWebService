@@ -8,10 +8,10 @@ class Cookie {
     
     get(name) {
         var entries = document.cookie.split(';');
-        for (let entry of entries) {
-            let buf = entry.trim().split("=");
-            let key = buf.shift().trim();
-            let value = decodeURI(buf.join("="))
+        for (const entry of entries) {
+            const buf = entry.trim().split("=");
+            const key = buf.shift().trim();
+            const value = decodeURI(buf.join("="))
             if (key == name) {
                 return value;
             }

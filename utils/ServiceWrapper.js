@@ -1,6 +1,6 @@
-const WebSocket = require("./WebSocketServer.js");
+import WebSocket from "./WebSocketServer.js";
 
-class ServiceWrapper {
+export default class ServiceWrapper {
 
     #server = null;
     #path = "";
@@ -28,5 +28,3 @@ class ServiceWrapper {
     }
 
 }
-
-module.exports = ServiceWrapper;

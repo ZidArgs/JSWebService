@@ -1,5 +1,5 @@
-const fs = require("fs");
-const crypto = require("crypto");
+import fs from "fs";
+import crypto from "crypto";
 
 const FILENAME = __dirname + "/data/accounts.js";
 const ACCOUNTS = JSON.parse(fs.readFileSync(FILENAME).toString());
@@ -8,11 +8,11 @@ function hashPass(password, salt) {
     return crypto.pbkdf2Sync(password, salt,  1000, 64, `sha512`).toString(`hex`);
 }
 
-class AccountManager {
+export default class AccountManager {
 
     add(name, email, password) {
         if (ACCOUNTS[name] != null) {
-            let salt = crypto.randomBytes(16).toString('hex');
+            const salt = crypto.randomBytes(16).toString('hex');
             ACCOUNTS[name] = {
                 email: email,
                 password: hashPass(password, salt),
@@ -30,7 +30,7 @@ class AccountManager {
 
     get(name) {
         if (ACCOUNTS[name] != null) {
-            let acc = ACCOUNTS[name];
+            const acc = ACCOUNTS[name];
             return {
                 email: acc.email,
                 plan: acc.plan,
@@ -56,7 +56,7 @@ class AccountManager {
     setPassword(name, old_password, new_password) {
         if (ACCOUNTS[name] != null) {
             if (this.checkPassword(name, old_password)) {
-                let salt = crypto.randomBytes(16).toString('hex');
+                const salt = crypto.randomBytes(16).toString('hex');
                 ACCOUNTS[name].password = hashPass(new_password, salt);
                 ACCOUNTS[name].salt = salt;
                 return true;
@@ -67,13 +67,11 @@ class AccountManager {
 
     checkPassword(name, password) {
         if (ACCOUNTS[name] != null) {
-            let acc = ACCOUNTS[name];
-            let hash = hashPass(password, acc.salt);
+            const acc = ACCOUNTS[name];
+            const hash = hashPass(password, acc.salt);
             return hash == acc.password;
         }
         return false;
     }
 
 }
-
-module.exports = AccountManager;

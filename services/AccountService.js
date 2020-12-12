@@ -1,6 +1,6 @@
 const AccountManager = require('../util/AccountManager.js');
 
-class AccountService {
+export default class AccountService {
 
     #wss = null;
 
@@ -56,5 +56,3 @@ class AccountService {
     }
 
 }
-
-module.exports = AccountService;

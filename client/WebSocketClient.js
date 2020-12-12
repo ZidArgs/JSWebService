@@ -52,7 +52,7 @@ export default class WebSocketClient extends EventTarget {
     }
     
     #onsocketmessage(data) {
-        let event = new Event("message");
+        const event = new Event("message");
         event.data = data;
         this.#onmessage(event);
         this.dispatchEvent(event);
@@ -86,7 +86,7 @@ export default class WebSocketClient extends EventTarget {
                     this.#socket.addEventListener('open', (event) => this.#onsocketopen(event));
                     this.#socket.addEventListener('close', (event) => this.#onsocketclose(event));
                     this.#socket.addEventListener('message', (event) => {
-                        let msg = JSON.parse(event.data);
+                        const msg = JSON.parse(event.data);
                         switch(msg.type) {
                             case "ping":
                                 this.#onsocketping(msg);
@@ -129,7 +129,7 @@ export default class WebSocketClient extends EventTarget {
         if (typeof data == "undefined") {
             throw new Error("can not send undefined data");
         }
-        let msg = JSON.stringify({
+        const msg = JSON.stringify({
             type: "data",
             data: data
         });

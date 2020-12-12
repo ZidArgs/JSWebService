@@ -1,5 +1,5 @@
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
 
 const DEFAULT_INDEX_FILES = ["index.html", "index.htm"];
 const DEFAULT_SERVE_FOLDER = "./static";
@@ -25,7 +25,7 @@ const DEFAULT_MIME_TYPES = {
 
 
 
-class StaticService {
+export default class StaticService {
 
     #serveFolder = path.resolve("./", DEFAULT_SERVE_FOLDER);
     #defaultIndex = DEFAULT_INDEX_FILES;
@@ -120,5 +120,3 @@ class StaticService {
     };
 
 }
-
-module.exports = StaticService;

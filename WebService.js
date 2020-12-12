@@ -1,15 +1,15 @@
-const HTTP = require("./utils/HTTPServer.js");
-const ServiceWrapper = require("./utils/ServiceWrapper.js");
+import HTTP from "./utils/HTTPServer.js";
+import ServiceWrapper from "./utils/ServiceWrapper.js";
 
 function getPort(value) {
-    let port = parseInt(value);
+    const port = parseInt(value);
     if (isNaN(port)) {
         return 8001;
     }
     return port;
 }
 
-class WebService {
+export default class WebService {
 
     #port = "";
     #server = null;
@@ -22,12 +22,10 @@ class WebService {
 
     registerService(ServiceModule, endpoint, options) {
         endpoint = `/${endpoint.replace(/^\/|\/$/, "")}`;
-        let wrapper = new ServiceWrapper(this.#server, endpoint);
-        let res = new ServiceModule(wrapper, options);
+        const wrapper = new ServiceWrapper(this.#server, endpoint);
+        const res = new ServiceModule(wrapper, options);
         console.log(`installed service: ${this.#port} => ${endpoint}`);
         return res;
     }
 
 }
-
-module.exports = WebService;

@@ -1,8 +1,8 @@
-const HTTP = require("http");
-const URL = require("url");
+import HTTP from "http";
+import URL from "url";
 
 function getOptionsHeader(cors) {
-    let res = {};
+    const res = {};
     res['Content-Type'] = 'text/plain; charset=utf-8';
     if (!!cors) {
         res['Access-Control-Allow-Origin'] = '*';
@@ -15,7 +15,7 @@ function getOptionsHeader(cors) {
 }
 
 function getHeader(cors, options) {
-    let res = {};
+    const res = {};
     if (options == null) {
         options = {};
     }
@@ -43,27 +43,39 @@ function getHeader(cors, options) {
     return res;
 }
 
-function getRequestBody(request) {
-    return new Promise(function (resolve, reject) {
-        let res = "";
-        request.on('error', (err) => {
-            reject(err);
-        }).on('data', (chunk) => {
-            res += chunk;
-        }).on('end', async () => {
-            resolve(res);
+async function getRequestBody(request, method, headers) {
+    if (method == "POST" || method == "PUT") {
+        const result = new Promise(function (resolve, reject) {
+            const res = [];
+            request.on('error', (err) => {
+                reject(err);
+            }).on('data', (chunk) => {
+                res.push(chunk);
+            }).on('end', async () => {
+                resolve(res.join(""));
+            });
         });
-    });
+        if (headers['content-type'].indexOf('application/json') >= 0) {
+            try {
+                return JSON.parse(result);
+            } catch (err) {
+                console.error(err);
+                return result;
+            }
+        }
+        return result;
+    }
+    return null;
 }
 
 async function callReciever(recievers, path, method, query, body) {
     path = path.replace(/(^\/|\/$)/g, "");
-    let parts = path.split("/").map(p => decodeURI(p));
-    let params = [];
+    const parts = path.split("/").map(p => decodeURI(p));
+    const params = [];
     while (!!parts.length) {
-        let uri = `/${parts.join("/")}`;
+        const uri = `/${parts.join("/")}`;
         if (recievers.has(uri)) {
-            let reciever = recievers.get(uri);
+            const reciever = recievers.get(uri);
             return await reciever(method, params, query, body);
         }
         params.unshift(parts.pop());
@@ -71,13 +83,13 @@ async function callReciever(recievers, path, method, query, body) {
     return {status: 404};
 }
 
-class HTTPServer {
+export default class HTTPServer {
 
     #sockets = new Map();
     #recievers = new Map();
 
     constructor(port, enableCors = false) {
-        let server = HTTP.createServer();
+        const server = HTTP.createServer();
         server.listen(port);
         server.on('request', async (request, response) => {
             const location = URL.parse(request.url, true);
@@ -91,27 +103,17 @@ class HTTPServer {
                     const pathname = location.pathname;
                     const query = location.query;
                     // parse body
-                    let body = null;
-                    if (method == "POST" || method == "PUT") {
-                        body = await getRequestBody(request);
-                        if (headers['content-type'].indexOf('application/json') >= 0) {
-                            try {
-                                body = JSON.parse(body);
-                            } catch (e) {
-                                console.log(e);
-                            }
-                        }
-                    }
+                    const body = await getRequestBody(request, method, headers);
                     // parse cookies
-                    let cookies = {};
+                    const cookies = {};
                     if (request.headers.cookie != null) {
                         request.headers.cookie.split(";").forEach(function(cookie) {
-                            var parts = cookie.split('=');
+                            const parts = cookie.split('=');
                             cookies[parts.shift().trim()] = decodeURI(parts.join('='));
                         });
                     }
                     // call the reciever that matches most specific
-                    let res = await callReciever(this.#recievers, pathname, method, query, body, cookies);
+                    const res = await callReciever(this.#recievers, pathname, method, query, body, cookies);
                     if (res != null && res.status != null) {
                         if (res.content != null) {
                             response.writeHead(res.status, getHeader(enableCors, res.options));
@@ -144,10 +146,10 @@ class HTTPServer {
             }
         });
         server.on('upgrade', (request, socket, head) => {
-            let pathname = URL.parse(request.url).pathname;
-            pathname = `/${pathname.replace(/(^\/|\/$)/g, "")}`;
+            const urlPath = URL.parse(request.url).pathname;
+            const pathname = `/${urlPath.replace(/(^\/|\/$)/g, "")}`;
             if (this.#sockets.has(pathname)) {
-                let wss = this.#sockets.get(pathname);
+                const wss = this.#sockets.get(pathname);
                 wss.handleUpgrade(request, socket, head);
             } else {
                 socket.destroy();
@@ -176,5 +178,3 @@ class HTTPServer {
     }
 
 }
-
-module.exports = HTTPServer;

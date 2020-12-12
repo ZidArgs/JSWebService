@@ -1,6 +1,6 @@
-const WebSocket = require("ws");
-const crypto = require("crypto");
-const Ping = require("./Ping.js");
+import WebSocket from "ws";
+import crypto from "crypto";
+import Ping from "./Ping.js";
 
 const PING_OUT = 10000;
 const EMPTY_FN = function() {};
@@ -11,7 +11,7 @@ function createUUID() {
     )
 }
 
-class WebSocketServer {
+export default class WebSocketServer {
 
     #sockets = new Map();
     #server = new WebSocket.Server({noServer: true});
@@ -30,7 +30,7 @@ class WebSocketServer {
                 data: ws.id
             }));
             ws.on('message', (message) => {
-                let msg = JSON.parse(message);
+                const msg = JSON.parse(message);
                 switch(msg.type) {
                     case "pong":
                         ws.isAlive = true;
@@ -91,7 +91,7 @@ class WebSocketServer {
     }
 
     send(reciever, data) {
-        let msg = JSON.stringify({
+        const msg = JSON.stringify({
             type: "data",
             data: data
         });
@@ -101,7 +101,7 @@ class WebSocketServer {
     }
 
     sendMulti(recievers, data) {
-        let msg = JSON.stringify({
+        const msg = JSON.stringify({
             type: "data",
             data: data
         });
@@ -113,23 +113,23 @@ class WebSocketServer {
     }
 
     sendAll(data) {
-        let recievers = this.#sockets.keys();
-        let msg = JSON.stringify({
+        const recievers = this.#sockets.keys();
+        const msg = JSON.stringify({
             type: "data",
             data: data
         });
-        for (let reciever of recievers) {
+        for (const reciever of recievers) {
             this.#sockets.get(reciever).send(msg);
         }
     }
 
     sendAllBut(ignored, data) {
-        let recievers = this.#sockets.keys();
-        let msg = JSON.stringify({
+        const recievers = this.#sockets.keys();
+        const msg = JSON.stringify({
             type: "data",
             data: data
         });
-        for (let reciever of recievers) {
+        for (const reciever of recievers) {
             if (reciever == ignored) {
                 this.#sockets.get(reciever).send(msg);
             }
@@ -137,5 +137,3 @@ class WebSocketServer {
     }
 
 }
-
-module.exports = WebSocketServer;

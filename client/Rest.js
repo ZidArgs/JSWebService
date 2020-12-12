@@ -3,11 +3,11 @@ async function sendRequest(url, query, config) {
     if (typeof query != "undefined") {
         if (typeof query == "object") {
             if (Array.isArray(query)) {
-                for (let i of query) {
+                for (const i of query) {
                     url.searchParams.append(i, "");
                 }
             } else {
-                for (let i in query) {
+                for (const i in query) {
                     url.searchParams.append(i, query[i]);
                 }
             }
@@ -19,28 +19,32 @@ async function sendRequest(url, query, config) {
     config.headers = config.headers ?? {};
     config.headers['Content-Type'] = 'application/json; charset=utf-8';
     config.headers['Cache-Control'] = 'no-cache';
-    let response = await fetch(url, config);
+    const response = await fetch(url, config);
     if (response.status < 200 || response.status >= 300) {
         throw new Error(`error on ${config.method} for url "${url}" - status: ${response.status} - ${response.statusText}`);
     }
-    let data = null;
     if (response.headers.get('content-type').indexOf('application/json') >= 0) {
         try {
-            data = await response.json();
-        } catch (e) { }
+            return await response.json();
+        } catch(err) {
+            console.error(err);
+            return null;
+        }
     } else {
         try {
-            data = await response.text();
-        } catch (e) { }
+            return await response.text();
+        } catch(err) {
+            console.error(err);
+            return null;
+        }
     }
-    return data;
 }
 
 class Rest {
 
     async get(url, query) {
         return await sendRequest(url, query, {
-            method: 'GET',
+            method: 'GET'
         });
     }
 
@@ -68,7 +72,7 @@ class Rest {
 
     async delete(url, query) {
         return await sendRequest(url, query, {
-            method: 'DELETE',
+            method: 'DELETE'
         });
     }
 

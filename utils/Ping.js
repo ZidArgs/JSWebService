@@ -1,4 +1,4 @@
-class Ping {
+export default class Ping {
 
     #maxtime = 30000;
     #server = null;
@@ -16,7 +16,7 @@ class Ping {
     #setNextTimeout = () => {
         clearTimeout(this.#timeout);
         if (this.#maxtime > 0) {
-            this.#timeout = setTimeout(()=>{
+            this.#timeout = setTimeout(() => {
                 this.ping();
             }, this.#maxtime);
         } else {
@@ -25,9 +25,9 @@ class Ping {
     }
 
     set maxTime(value) {
-        value = parseInt(value);
-        if (!isNaN(value) && value >= 0) {
-            this.#maxtime = value;
+        const time = parseInt(value);
+        if (!isNaN(time) && time >= 0) {
+            this.#maxtime = time;
             this.#setNextTimeout();
         }
     }
@@ -37,7 +37,7 @@ class Ping {
     }
 
     ping() {
-        this.#server.clients.forEach(function (ws) {
+        this.#server.clients.forEach(function(ws) {
             if (ws.isAlive === false) {
                 return ws.terminate();
             }
@@ -51,5 +51,3 @@ class Ping {
     }
 
 }
-
-module.exports = Ping;
