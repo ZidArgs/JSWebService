@@ -1,6 +1,6 @@
 async function sendRequest(url, query, config) {
     url = new URL(url);
-    if (typeof query != "undefined") {
+    if (query != null) {
         if (typeof query == "object") {
             if (Array.isArray(query)) {
                 for (const i of query) {
@@ -15,25 +15,25 @@ async function sendRequest(url, query, config) {
             url.searchParams.append(query, "");
         }
     }
-    config.cache = 'no-cache';
+    config.cache = "no-cache";
     config.headers = config.headers ?? {};
-    config.headers['Content-Type'] = 'application/json; charset=utf-8';
-    config.headers['Cache-Control'] = 'no-cache';
+    config.headers["Content-Type"] = "application/json; charset=utf-8";
+    config.headers["Cache-Control"] = "no-cache";
     const response = await fetch(url, config);
     if (response.status < 200 || response.status >= 300) {
         throw new Error(`error on ${config.method} for url "${url}" - status: ${response.status} - ${response.statusText}`);
     }
-    if (response.headers.get('content-type').indexOf('application/json') >= 0) {
+    if (response.headers.get("content-type").indexOf("application/json") >= 0) {
         try {
             return await response.json();
-        } catch(err) {
+        } catch (err) {
             console.error(err);
             return null;
         }
     } else {
         try {
             return await response.text();
-        } catch(err) {
+        } catch (err) {
             console.error(err);
             return null;
         }
@@ -43,15 +43,13 @@ async function sendRequest(url, query, config) {
 class Rest {
 
     async get(url, query) {
-        return await sendRequest(url, query, {
-            method: 'GET'
-        });
+        return await sendRequest(url, query, {method: "GET"});
     }
 
-    async post(url, data = {}, query) {
+    async post(url, data = {}, query = null) {
         if (typeof data == "object" && !Array.isArray(data)) {
             return await sendRequest(url, query, {
-                method: 'POST',
+                method: "POST",
                 body: JSON.stringify(data)
             });
         } else {
@@ -59,10 +57,10 @@ class Rest {
         }
     }
 
-    async put(url, data = {}, query) {
+    async put(url, data = {}, query = null) {
         if (typeof data == "object" && !Array.isArray(data)) {
             return await sendRequest(url, query, {
-                method: 'PUT',
+                method: "PUT",
                 body: JSON.stringify(data)
             });
         } else {
@@ -71,9 +69,7 @@ class Rest {
     }
 
     async delete(url, query) {
-        return await sendRequest(url, query, {
-            method: 'DELETE'
-        });
+        return await sendRequest(url, query, {method: "DELETE"});
     }
 
 }

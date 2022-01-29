@@ -12,7 +12,7 @@ export default class AccountManager {
 
     add(name, email, password) {
         if (ACCOUNTS[name] != null) {
-            const salt = crypto.randomBytes(16).toString('hex');
+            const salt = crypto.randomBytes(16).toString("hex");
             ACCOUNTS[name] = {
                 email: email,
                 password: hashPass(password, salt),
@@ -56,7 +56,7 @@ export default class AccountManager {
     setPassword(name, old_password, new_password) {
         if (ACCOUNTS[name] != null) {
             if (this.checkPassword(name, old_password)) {
-                const salt = crypto.randomBytes(16).toString('hex');
+                const salt = crypto.randomBytes(16).toString("hex");
                 ACCOUNTS[name].password = hashPass(new_password, salt);
                 ACCOUNTS[name].salt = salt;
                 return true;

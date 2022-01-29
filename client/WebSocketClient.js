@@ -9,11 +9,17 @@ const EMPTY_FN = function() {};
 export default class WebSocketClient extends EventTarget {
 
     #messageBuffer = new MessageBuffer();
+
     #serviceURL;
+
     #socket;
+
     #socketID;
+
     #timeout;
+
     #maxtime = 30000;
+
     #onmessage = EMPTY_FN;
 
     constructor(url) {
@@ -44,13 +50,13 @@ export default class WebSocketClient extends EventTarget {
         this.#socket = undefined;
         this.#socketID = undefined;
     }
-    
+
     #onsocketping(msg) {
         this.#setNextTimeout();
         msg.type = "pong";
         this.#socket.send(JSON.stringify(msg));
     }
-    
+
     #onsocketmessage(data) {
         const event = new Event("message");
         event.data = data;
@@ -83,23 +89,24 @@ export default class WebSocketClient extends EventTarget {
             if (!this.#socket) {
                 try {
                     this.#socket = new WebSocket(this.#serviceURL);
-                    this.#socket.addEventListener('open', (event) => this.#onsocketopen(event));
-                    this.#socket.addEventListener('close', (event) => this.#onsocketclose(event));
-                    this.#socket.addEventListener('message', (event) => {
+                    this.#socket.addEventListener("open", (event) => this.#onsocketopen(event));
+                    this.#socket.addEventListener("close", (event) => this.#onsocketclose(event));
+                    this.#socket.addEventListener("message", (event) => {
                         const msg = JSON.parse(event.data);
-                        switch(msg.type) {
+                        switch (msg.type) {
                             case "ping":
                                 this.#onsocketping(msg);
-                            break;
+                                break;
                             case "uuid":
                                 this.#socketID = msg.data;
                                 resolve();
-                            break;
+                                break;
                             case "data":
                                 this.#onsocketmessage(msg.data);
-                            break;
-                        }});
-                } catch(e) {
+                                break;
+                        }
+                    });
+                } catch (e) {
                     reject(e);
                 }
             } else {
@@ -112,11 +119,11 @@ export default class WebSocketClient extends EventTarget {
         return new Promise((resolve, reject) => {
             if (!!this.#socket && this.#socket.readyState == WebSocket.OPEN) {
                 try {
-                    this.#socket.addEventListener('close', (event) => {
+                    this.#socket.addEventListener("close", (event) => {
                         resolve();
                     });
                     this.#socket.close();
-                } catch(e) {
+                } catch (e) {
                     reject(e);
                 }
             } else {

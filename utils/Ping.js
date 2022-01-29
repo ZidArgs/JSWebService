@@ -1,7 +1,9 @@
 export default class Ping {
 
     #maxtime = 30000;
+
     #server = null;
+
     #timeout = null;
 
     constructor(server, maxtime) {

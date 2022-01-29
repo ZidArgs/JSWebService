@@ -3,7 +3,9 @@ import WebSocket from "./WebSocketServer.js";
 export default class ServiceWrapper {
 
     #server = null;
+
     #path = "";
+
     #socket = null;
 
     constructor(server, path) {

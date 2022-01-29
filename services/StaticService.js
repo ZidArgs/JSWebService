@@ -20,7 +20,7 @@ const DEFAULT_MIME_TYPES = {
     "bmp": "image/bmp",
     // configuration files
     "json": "application/json; charset=utf-8",
-    "xml": "application/xml; charset=utf-8",
+    "xml": "application/xml; charset=utf-8"
 };
 
 
@@ -28,7 +28,9 @@ const DEFAULT_MIME_TYPES = {
 export default class StaticService {
 
     #serveFolder = path.resolve("./", DEFAULT_SERVE_FOLDER);
+
     #defaultIndex = DEFAULT_INDEX_FILES;
+
     #mimeTypes = [];
 
     constructor(server, options) {
@@ -49,8 +51,8 @@ export default class StaticService {
         if (options.mimeTypes != null) {
             types = options.mimeTypes;
         }
-        for (let key in types) {
-            let value = types[key];
+        for (const key in types) {
+            const value = types[key];
             if (ALLOWED_EXT.test(key)) {
                 this.#mimeTypes.push({
                     pattern: new RegExp(`^.*\\.(${key.replace(/\./g, "\\.")})$`, "i"),
@@ -63,16 +65,16 @@ export default class StaticService {
 
     #getFile = function(filePath) {
         if (fs.existsSync(filePath)) {
-            let stat = fs.statSync(filePath);
+            const stat = fs.statSync(filePath);
             if (stat.isFile(filePath)) {
                 return filePath;
             }
         }
-        
-        for (let index of this.#defaultIndex) {
-            let current = path.resolve(filePath, index);
+
+        for (const index of this.#defaultIndex) {
+            const current = path.resolve(filePath, index);
             if (fs.existsSync(current)) {
-                let stat = fs.statSync(current);
+                const stat = fs.statSync(current);
                 if (stat.isFile(current)) {
                     return current;
                 }
@@ -81,9 +83,9 @@ export default class StaticService {
 
         return null;
     }
-    
+
     #getMimeType = function(file) {
-        for (let entry of this.#mimeTypes) {
+        for (const entry of this.#mimeTypes) {
             if (entry.pattern.test(file)) {
                 return entry.type;
             }
@@ -93,12 +95,12 @@ export default class StaticService {
 
     #onrequest = async function(method, params, query, body) {
         if (method == "GET") {
-            let filePath = path.resolve(this.#serveFolder, params.join("/"));
-            let file = this.#getFile(filePath);
+            const filePath = path.resolve(this.#serveFolder, params.join("/"));
+            const file = this.#getFile(filePath);
             if (file != null && file.startsWith(this.#serveFolder)) {
-                let stat = fs.statSync(file);
-                let readStream = fs.createReadStream(file);
-                let type = this.#getMimeType(file);
+                const stat = fs.statSync(file);
+                const readStream = fs.createReadStream(file);
+                const type = this.#getMimeType(file);
                 return {
                     status: 200,
                     stream: readStream,
@@ -108,14 +110,10 @@ export default class StaticService {
                     }
                 };
             } else {
-                return {
-                    status: 404
-                };
+                return {status: 404};
             }
         } else {
-            return {
-                status: 405
-            };
+            return {status: 405};
         }
     };
 

@@ -12,6 +12,7 @@ function getPort(value) {
 export default class WebService {
 
     #port = "";
+
     #server = null;
 
     constructor(port, enableCors) {

@@ -38,9 +38,7 @@ class Account {
 
     async logout() {
         const token = Cookie.get(token);
-        await Rest.post("/accounts/logout", {
-            token: token
-        });
+        await Rest.post("/accounts/logout", {token: token});
         Cookie.delete("token");
     }
 

@@ -4,9 +4,9 @@ import Ping from "./Ping.js";
 
 const PING_OUT = 10000;
 const EMPTY_FN = function() {};
-    
+
 function createUUID() {
-    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
         (c ^ crypto.randomBytes(1)[0] & 15 >> c / 4).toString(16)
     )
 }
@@ -14,33 +14,36 @@ function createUUID() {
 export default class WebSocketServer {
 
     #sockets = new Map();
+
     #server = new WebSocket.Server({noServer: true});
 
     #onconnect = EMPTY_FN;
+
     #onmessage = EMPTY_FN;
+
     #onclose = EMPTY_FN;
 
     constructor() {
-        this.#server.on('connection', (ws) => {
+        this.#server.on("connection", (ws) => {
             ws.isAlive = true;
             ws.id = createUUID();
             this.#sockets.set(ws.id, ws);
             ws.send(JSON.stringify({
-                type: 'uuid',
+                type: "uuid",
                 data: ws.id
             }));
-            ws.on('message', (message) => {
+            ws.on("message", (message) => {
                 const msg = JSON.parse(message);
-                switch(msg.type) {
+                switch (msg.type) {
                     case "pong":
                         ws.isAlive = true;
-                    break;
+                        break;
                     case "data":
                         this.#onmessage(ws.id, msg.data);
-                    break;
+                        break;
                 }
             });
-            ws.on('close', () => {
+            ws.on("close", () => {
                 this.#sockets.delete(ws.id);
                 this.#onclose(ws.id);
             });
@@ -75,10 +78,10 @@ export default class WebSocketServer {
 
     handleUpgrade(request, socket, head) {
         this.#server.handleUpgrade(request, socket, head, (ws) => {
-            this.#server.emit('connection', ws);
+            this.#server.emit("connection", ws);
         });
     }
-    
+
     has(reciever) {
         return this.#sockets.has(reciever);
     }
@@ -105,7 +108,7 @@ export default class WebSocketServer {
             type: "data",
             data: data
         });
-        for (let reciever of recievers) {
+        for (const reciever of recievers) {
             if (this.#sockets.has(reciever)) {
                 this.#sockets.get(reciever).send(msg);
             }

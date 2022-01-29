@@ -1,13 +1,13 @@
 class Cookie {
-    
+
     set(name, value, expire = 1) {
-        var d = new Date();
+        const d = new Date();
         d.setTime(d.getTime() + (expire * 24 * 60 * 60 * 1000));
         document.cookie = `${name}=${value};expires=${d.toUTCString()};path=/`;
     }
-    
+
     get(name) {
-        var entries = document.cookie.split(';');
+        const entries = document.cookie.split(";");
         for (const entry of entries) {
             const buf = entry.trim().split("=");
             const key = buf.shift().trim();
