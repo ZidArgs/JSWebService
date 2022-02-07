@@ -23,8 +23,6 @@ const DEFAULT_MIME_TYPES = {
     "xml": "application/xml; charset=utf-8"
 };
 
-
-
 export default class StaticService {
 
     #serveFolder = path.resolve("./", DEFAULT_SERVE_FOLDER);
