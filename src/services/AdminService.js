@@ -6,7 +6,7 @@ export default class AdminService {
 
     #requestCallbacks = new Map();
 
-    #requestCounter = 0;
+    // #requestCounter = 0;
 
     #hostData = new Map();
 
