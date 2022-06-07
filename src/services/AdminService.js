@@ -32,7 +32,7 @@ export default class AdminService {
         this.#hostData.delete(name);
     }
 
-    #onrequest = async function(method, params, query, body) {
+    #onrequest = async function(method, params, query/* , body */) {
         const isAdmin = this.#isUserAdmin(query.token);
 
         if (isAdmin) {
@@ -61,7 +61,7 @@ export default class AdminService {
         return {status: 400};
     }
 
-    #isUserAdmin = function(token) {
+    #isUserAdmin = function(/* token */) {
         // TODO
         return false;
     }
@@ -72,15 +72,15 @@ export default class AdminService {
         }
     }
 
-    #removeAccount = function(username, pass) {
+    #removeAccount = function(/* username, pass */) {
         // TODO
     }
 
-    #getAccountNames = function(search) {
+    #getAccountNames = function(/* search */) {
         // TODO
     }
 
-    #getAccountData = function(username) {
+    #getAccountData = function(/* username */) {
         // TODO
     }
 

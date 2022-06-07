@@ -91,7 +91,7 @@ export default class StaticService {
         return DEFAULT_MIME_TYPE;
     }
 
-    #onrequest = async function(method, params, query, body) {
+    #onrequest = async function(method, params/* , query, body */) {
         if (method == "GET") {
             const filePath = path.resolve(this.#serveFolder, params.join("/"));
             const file = this.#getFile(filePath);

@@ -70,7 +70,7 @@ async function getRequestBody(request, method, headers) {
 
 async function callReciever(recievers, path, method, query, body) {
     path = path.replace(/(^\/|\/$)/g, "");
-    const parts = path.split("/").map(p => decodeURI(p));
+    const parts = path.split("/").map((p) => decodeURI(p));
     const params = [];
     while (parts.length) {
         const uri = `/${parts.join("/")}`;

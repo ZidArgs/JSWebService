@@ -32,7 +32,7 @@ export default class AccountService {
         this.#hostData.delete(name);
     }
 
-    #onrequest = async function(method, params, query, body) {
+    #onrequest = async function(method, params, query/* , body */) {
         if (method == "POST") {
             switch (params[0]) {
                 case "login": {
@@ -67,23 +67,23 @@ export default class AccountService {
         }
     }
 
-    #removeAccount = function(token, pass) {
+    #removeAccount = function(/* token, pass */) {
         // TODO
     }
 
-    #getAccountData = function(token) {
+    #getAccountData = function(/* token */) {
         // TODO
     }
 
-    #login = function(username, pass) {
+    #login = function(/* username, pass */) {
         // TODO
     }
 
-    #logout = function(token) {
+    #logout = function(/* token */) {
         // TODO
     }
 
-    #generateApiToken = function(token) {
+    #generateApiToken = function(/* token */) {
         // TODO
     }
 

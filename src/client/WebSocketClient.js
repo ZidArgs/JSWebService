@@ -39,12 +39,12 @@ export default class WebSocketClient extends EventTarget {
         }
     }
 
-    #onsocketopen(event) {
-        this.#messageBuffer.each(msg => this.send(msg));
+    #onsocketopen(/* event */) {
+        this.#messageBuffer.each((msg) => this.send(msg));
         this.#setNextTimeout();
     }
 
-    #onsocketclose(event) {
+    #onsocketclose(/* event */) {
         clearTimeout(this.#timeout);
         this.#timeout = undefined;
         this.#socket = undefined;
@@ -119,7 +119,7 @@ export default class WebSocketClient extends EventTarget {
         return new Promise((resolve, reject) => {
             if (!!this.#socket && this.#socket.readyState == WebSocket.OPEN) {
                 try {
-                    this.#socket.addEventListener("close", (event) => {
+                    this.#socket.addEventListener("close", () => {
                         resolve();
                     });
                     this.#socket.close();
