@@ -80,6 +80,10 @@ async function callReciever(recievers, path, method, query, body) {
         }
         params.unshift(parts.pop());
     }
+    if (recievers.has("/")) {
+        const reciever = recievers.get("/");
+        return await reciever(method, params, query, body);
+    }
     return {status: 404};
 }
 
