@@ -89,24 +89,33 @@ async function callReciever(recievers, path, method, query, body) {
 
 export default class HTTPServer {
 
+    #port;
+
     #sockets = new Map();
 
     #recievers = new Map();
 
-    constructor(port, enableCors = false) {
+    constructor(port, enableCors = false, logRequests = false) {
+        this.#port = port;
         const server = HTTP.createServer();
-        server.listen(port);
+        server.listen(this.#port);
         server.on("request", async (request, response) => {
             const location = URL.parse(request.url, true);
             const method = request.method.toUpperCase();
             try {
-                if (method == "OPTIONS") {
+                if (method === "OPTIONS") {
+                    if (logRequests) {
+                        console.log(`[WebService:${this.#port.toString().padEnd(5)}] requesting OPTIONS`);
+                    }
                     response.writeHead(204, getOptionsHeader(enableCors));
                     response.end();
                 } else {
                     const headers = request.headers;
                     const pathname = location.pathname;
                     const query = location.query;
+                    if (logRequests) {
+                        console.log(`[WebService:${this.#port.toString().padEnd(5)}] requesting ${method} => ${location.pathname}`);
+                    }
                     // parse body
                     const body = await getRequestBody(request, method, headers);
                     // parse cookies
@@ -137,16 +146,20 @@ export default class HTTPServer {
                         throw new Error("response without status returned from service reciever");
                     }
                 }
-            } catch (e) {
-                console.log(`ERROR during response for ${request.url}`, e);
+            } catch (err) {
+                console.log(`[WebService:${this.#port.toString().padEnd(5)}] ERROR during response => ${request.url}`);
+                console.error(err);
                 response.writeHead(500, getHeader(enableCors, {type: "application/json; charset=utf-8"}));
                 response.end(JSON.stringify({
                     url: request.url,
-                    error: e
+                    error: err
                 }));
             }
         });
         server.on("upgrade", (request, socket, head) => {
+            if (logRequests) {
+                console.log(`[WebService:${this.#port.toString().padEnd(5)}] requesting upgrade => ${location.pathname}`);
+            }
             const urlPath = URL.parse(request.url).pathname;
             const pathname = `/${urlPath.replace(/(^\/|\/$)/g, "")}`;
             if (this.#sockets.has(pathname)) {

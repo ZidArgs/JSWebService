@@ -15,17 +15,17 @@ export default class WebService {
 
     #server = null;
 
-    constructor(port, enableCors) {
+    constructor(port, enableCors, logRequests) {
         this.#port = getPort(port);
-        this.#server = new HTTP(this.#port, !!enableCors);
-        console.log(`WebService listening on port ${this.#port}`);
+        this.#server = new HTTP(this.#port, !!enableCors, !!logRequests);
+        console.log(`[WebService:${this.#port.toString().padEnd(5)}] start listening`);
     }
 
     registerService(ServiceModule, endpoint, options) {
         endpoint = `/${endpoint.replace(/^\/|\/$/, "")}`;
         const wrapper = new ServiceWrapper(this.#server, endpoint);
         const res = new ServiceModule(wrapper, options);
-        console.log(`installed service: ${this.#port} => ${endpoint}`);
+        console.log(`[WebService:${this.#port.toString().padEnd(5)}] registered {${ServiceModule.name}} => ${endpoint}`);
         return res;
     }
 
