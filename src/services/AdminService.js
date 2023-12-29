@@ -1,6 +1,7 @@
-const AccountManager = require("../util/AccountManager.js");
+import ServiceModule from "../ServiceModule.js";
+import AccountManager from "../util/AccountManager.js";
 
-export default class AdminService {
+export default class AdminService extends ServiceModule {
 
     #wss = null;
 
@@ -13,26 +14,27 @@ export default class AdminService {
     #hostNames = new Map();
 
     constructor(server) {
+        super(server);
         this.#wss = server.getWebSocket();
         this.#wss.onmessage = (sender, msg) => this.#onmessage(sender, msg);
         this.#wss.onclose = (sender) => this.#onclose(sender);
         server.onrequest = (method, params, query, body) => this.#onrequest(method, params, query, body);
     }
 
-    #onmessage = function(sender, msg) {
+    #onmessage(sender, msg) {
         if (this.#requestCallbacks.has(msg.requestID)) {
             this.#requestCallbacks.get(msg.requestID)(msg.body);
             this.#requestCallbacks.delete(msg.requestID);
         }
     }
 
-    #onclose = function(sender) {
+    #onclose(sender) {
         const name = this.#hostNames.get(sender);
         this.#hostNames.delete(sender);
         this.#hostData.delete(name);
     }
 
-    #onrequest = async function(method, params, query/* , body */) {
+    async #onrequest(method, params, query/* , body */) {
         const isAdmin = this.#isUserAdmin(query.token);
 
         if (isAdmin) {
@@ -61,26 +63,26 @@ export default class AdminService {
         return {status: 400};
     }
 
-    #isUserAdmin = function(/* token */) {
+    #isUserAdmin(/* token */) {
         // TODO
         return false;
     }
 
-    #registerAccount = function(username, email, pass) {
+    #registerAccount(username, email, pass) {
         if (!AccountManager.has(username)) {
             AccountManager.add(username, email, pass);
         }
     }
 
-    #removeAccount = function(/* username, pass */) {
+    #removeAccount(/* username, pass */) {
         // TODO
     }
 
-    #getAccountNames = function(/* search */) {
+    #getAccountNames(/* search */) {
         // TODO
     }
 
-    #getAccountData = function(/* username */) {
+    #getAccountData(/* username */) {
         // TODO
     }
 

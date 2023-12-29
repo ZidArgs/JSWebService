@@ -96,9 +96,9 @@ export default class HTTPServer {
     #recievers = new Map();
 
     constructor(port, enableCors = false, logRequests = false) {
-        this.#port = port;
         const server = HTTP.createServer();
-        server.listen(this.#port);
+        server.listen(port);
+        this.#port = server.address().port;
         server.on("request", async (request, response) => {
             const location = URL.parse(request.url, true);
             const method = request.method.toUpperCase();
@@ -189,6 +189,10 @@ export default class HTTPServer {
 
     removeReciever(path) {
         this.#recievers.delete(path);
+    }
+
+    get port() {
+        return this.#port;
     }
 
 }

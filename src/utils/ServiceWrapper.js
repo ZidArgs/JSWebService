@@ -29,4 +29,8 @@ export default class ServiceWrapper {
         }
     }
 
+    get port() {
+        return this.#server.port;
+    }
+
 }

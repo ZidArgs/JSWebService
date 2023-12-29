@@ -1,6 +1,7 @@
-const AccountManager = require("../util/AccountManager.js");
+import ServiceModule from "../ServiceModule.js";
+import AccountManager from "../util/AccountManager.js";
 
-export default class AccountService {
+export default class AccountService extends ServiceModule {
 
     #wss = null;
 
@@ -13,26 +14,27 @@ export default class AccountService {
     #hostNames = new Map();
 
     constructor(server) {
+        super(server);
         this.#wss = server.getWebSocket();
         this.#wss.onmessage = (sender, msg) => this.#onmessage(sender, msg);
         this.#wss.onclose = (sender) => this.#onclose(sender);
         server.onrequest = (method, params, query, body) => this.#onrequest(method, params, query, body);
     }
 
-    #onmessage = function(sender, msg) {
+    #onmessage(sender, msg) {
         if (this.#requestCallbacks.has(msg.requestID)) {
             this.#requestCallbacks.get(msg.requestID)(msg.body);
             this.#requestCallbacks.delete(msg.requestID);
         }
     }
 
-    #onclose = function(sender) {
+    #onclose(sender) {
         const name = this.#hostNames.get(sender);
         this.#hostNames.delete(sender);
         this.#hostData.delete(name);
     }
 
-    #onrequest = async function(method, params, query/* , body */) {
+    async #onrequest(method, params, query/* , body */) {
         if (method == "POST") {
             switch (params[0]) {
                 case "login": {
@@ -61,29 +63,29 @@ export default class AccountService {
         return {status: 400};
     }
 
-    #registerAccount = function(username, email, pass) {
+    #registerAccount(username, email, pass) {
         if (!AccountManager.has(username)) {
             AccountManager.add(username, email, pass);
         }
     }
 
-    #removeAccount = function(/* token, pass */) {
+    #removeAccount(/* token, pass */) {
         // TODO
     }
 
-    #getAccountData = function(/* token */) {
+    #getAccountData(/* token */) {
         // TODO
     }
 
-    #login = function(/* username, pass */) {
+    #login(/* username, pass */) {
         // TODO
     }
 
-    #logout = function(/* token */) {
+    #logout(/* token */) {
         // TODO
     }
 
-    #generateApiToken = function(/* token */) {
+    #generateApiToken(/* token */) {
         // TODO
     }
 

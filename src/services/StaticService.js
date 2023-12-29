@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import ServiceModule from "../ServiceModule.js";
 
 const DEFAULT_INDEX_FILES = ["index.html", "index.htm"];
 const DEFAULT_SERVE_FOLDER = "./static";
@@ -23,7 +24,7 @@ const DEFAULT_MIME_TYPES = {
     "xml": "application/xml; charset=utf-8"
 };
 
-export default class StaticService {
+export default class StaticService extends ServiceModule {
 
     #serveFolder = path.resolve("./", DEFAULT_SERVE_FOLDER);
 
@@ -32,11 +33,13 @@ export default class StaticService {
     #mimeTypes = [];
 
     constructor(server, options) {
+        super(server);
         if (options == null) {
             options = {};
         }
         if (options.serveFolder != null) {
             this.#serveFolder = path.resolve("./", options.serveFolder);
+            console.log(`[StaticService#${this.index}] Serving folder: ${this.#serveFolder}`);
         }
         if (options.defaultIndex != null) {
             if (Array.isArray(options.defaultIndex)) {
@@ -61,7 +64,7 @@ export default class StaticService {
         server.onrequest = (method, params, query, body) => this.#onrequest(method, params, query, body);
     }
 
-    #getFile = function(filePath) {
+    #getFile(filePath) {
         if (fs.existsSync(filePath)) {
             const stat = fs.statSync(filePath);
             if (stat.isFile(filePath)) {
@@ -82,7 +85,7 @@ export default class StaticService {
         return null;
     }
 
-    #getMimeType = function(file) {
+    #getMimeType(file) {
         for (const entry of this.#mimeTypes) {
             if (entry.pattern.test(file)) {
                 return entry.type;
@@ -91,7 +94,7 @@ export default class StaticService {
         return DEFAULT_MIME_TYPE;
     }
 
-    #onrequest = async function(method, params/* , query, body */) {
+    async #onrequest(method, params/* , query, body */) {
         if (method == "GET") {
             const filePath = path.resolve(this.#serveFolder, params.join("/"));
             const file = this.#getFile(filePath);
@@ -113,6 +116,6 @@ export default class StaticService {
         } else {
             return {status: 405};
         }
-    };
+    }
 
 }
