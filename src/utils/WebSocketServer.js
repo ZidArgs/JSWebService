@@ -49,7 +49,19 @@ export default class WebSocketServer {
             });
             this.#onconnect(ws.id);
         });
-        new Ping(this.#server, PING_OUT);
+        // ---
+        new Ping(() => {
+            this.#server.clients.forEach(function(ws) {
+                if (ws.isAlive === false) {
+                    return ws.terminate();
+                }
+                ws.isAlive = false;
+                ws.send(JSON.stringify({
+                    type: "ping",
+                    time: new Date()
+                }));
+            });
+        }, PING_OUT);
     }
 
     set onconnect(value) {
