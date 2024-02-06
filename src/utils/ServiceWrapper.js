@@ -2,9 +2,9 @@ import WebSocket from "./WebSocketServer.js";
 
 export default class ServiceWrapper {
 
-    #server = null;
-
     #path = "";
+
+    #server = null;
 
     #socket = null;
 

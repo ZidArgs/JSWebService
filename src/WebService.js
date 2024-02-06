@@ -19,12 +19,12 @@ export default class WebService {
         console.log(`[WebService:${this.port.toString().padEnd(5)}] start listening`);
     }
 
-    registerService(Module, endpoint, options) {
+    registerService(Module, endpoint, options, credentialsManager) {
         if (!(Module.prototype instanceof ServiceModule)) {
             throw new Error("Error registering service: Only children of ServiceModule can be registered");
         }
         endpoint = `/${endpoint.replace(/^\/|\/$/, "")}`;
-        const wrapper = new ServiceWrapper(this.#server, endpoint);
+        const wrapper = new ServiceWrapper(this.#server, endpoint, credentialsManager);
         const res = new Module(wrapper, options);
         console.log(`[WebService:${this.port.toString().padEnd(5)}] registered service: ${res.instanceName} => ${endpoint}`);
         return res;

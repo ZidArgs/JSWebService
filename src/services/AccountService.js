@@ -1,6 +1,7 @@
 import ServiceModule from "../ServiceModule.js";
 import AccountManager from "../util/AccountManager.js";
 
+// TODO add email verification account activation (extra storage holding token and userId, user stays inactive until verification)
 export default class AccountService extends ServiceModule {
 
     #wss = null;
