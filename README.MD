@@ -17,10 +17,20 @@ const WebService = require('webservice');
 // get any service module
 const ServiceModule = require('./ServiceModule.js');
 // open WebService
-const service = new WebService(/*port*/ 8080, /*cors*/false);
+const service = new WebService(/*port*/ 8080, /*options*/ {
+    enableCors: false,
+    logRequests: true
+});
 // register the service module to listen to the path '/service'
 service.registerService(ServiceModule, "/service");
 ```
+
+### WebService parameters
+| parameter     | default              | effect                                           |
+| ------------- | -------------------- | ------------------------------------------------ |
+| accessManager | DefaultAccessManager | Set the `AccessManager` used for this WebService |
+| enableCors    | false                | Set if the WebService is running in CORS mode    |
+| logRequests   | false                | Should the WebService log all HTTP requests      |
 
 ## Using the StaticService
 

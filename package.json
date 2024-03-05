@@ -1,6 +1,6 @@
 {
   "name": "webservice",
-  "version": "1.4.4",
+  "version": "2.0.0",
   "description": "helper for creating simple webservices",
   "author": "Denis Peters (ZidArgs)",
   "license": "MIT",

@@ -1,5 +1,6 @@
 import HTTP from "http";
 import URL from "url";
+import AccessManager from "./manager/AccessManager.js";
 
 function getOptionsHeader(cors) {
     const res = {};
@@ -95,80 +96,106 @@ export default class HTTPServer {
 
     #recievers = new Map();
 
+    #accessManager;
+
     constructor(port, enableCors = false, logRequests = false) {
         const server = HTTP.createServer();
         server.listen(port);
         this.#port = server.address().port;
         server.on("request", async (request, response) => {
             const location = URL.parse(request.url, true);
-            const method = request.method.toUpperCase();
-            try {
-                if (method === "OPTIONS") {
-                    if (logRequests) {
-                        console.log(`[WebService:${this.#port.toString().padEnd(5)}] requesting OPTIONS`);
-                    }
-                    response.writeHead(204, getOptionsHeader(enableCors));
-                    response.end();
-                } else {
-                    const headers = request.headers;
-                    const pathname = location.pathname;
-                    const query = location.query;
-                    if (logRequests) {
-                        console.log(`[WebService:${this.#port.toString().padEnd(5)}] requesting ${method} => ${location.pathname}`);
-                    }
-                    // parse body
-                    const body = await getRequestBody(request, method, headers);
-                    // parse cookies
-                    const cookies = {};
-                    if (request.headers.cookie != null) {
-                        request.headers.cookie.split(";").forEach(function(cookie) {
-                            const parts = cookie.split("=");
-                            cookies[parts.shift().trim()] = decodeURI(parts.join("="));
-                        });
-                    }
-                    // call the reciever that matches most specific
-                    const res = await callReciever(this.#recievers, pathname, method, query, body, cookies);
-                    if (res != null && res.status != null) {
-                        if (res.content != null) {
-                            response.writeHead(res.status, getHeader(enableCors, res.options));
-                            response.end(res.content);
-                        } else if (res.stream != null) {
-                            response.writeHead(res.status, getHeader(enableCors, res.options));
-                            res.stream.pipe(response);
-                        } else if (res.json != null) {
-                            response.writeHead(res.status, getHeader(enableCors, {type: "application/json; charset=utf-8"}));
-                            response.end(JSON.stringify(res.json));
-                        } else {
-                            response.writeHead(res.status, getHeader(enableCors, res.options));
-                            response.end();
-                        }
-                    } else {
-                        throw new Error("response without status returned from service reciever");
-                    }
-                }
-            } catch (err) {
-                console.log(`[WebService:${this.#port.toString().padEnd(5)}] ERROR during response => ${request.url}`);
-                console.error(err);
-                response.writeHead(500, getHeader(enableCors, {type: "application/json; charset=utf-8"}));
+            const urlPath = location.pathname;
+            const pathname = `/${urlPath.replace(/(^\/|\/$)/g, "")}`;
+            if (this.#accessManager != null && !this.#accessManager.checkAccess(pathname)) {
+                console.log(`[WebService:${this.#port.toString()}] access violation => ${request.url}`);
+                response.writeHead(403, getHeader(enableCors, {type: "application/json; charset=utf-8"}));
                 response.end(JSON.stringify({
                     url: request.url,
-                    error: err
+                    error: "access violation"
                 }));
+            } else {
+                const method = request.method.toUpperCase();
+                try {
+                    if (method === "OPTIONS") {
+                        if (logRequests) {
+                            console.log(`[WebService:${this.#port.toString()}] requesting OPTIONS`);
+                        }
+                        response.writeHead(204, getOptionsHeader(enableCors));
+                        response.end();
+                    } else {
+                        const headers = request.headers;
+                        const query = location.query;
+                        if (logRequests) {
+                            console.log(`[WebService:${this.#port.toString()}] requesting ${method} => ${location.pathname}`);
+                        }
+                        // parse body
+                        const body = await getRequestBody(request, method, headers);
+                        // parse cookies
+                        const cookies = {};
+                        if (request.headers.cookie != null) {
+                            request.headers.cookie.split(";").forEach(function(cookie) {
+                                const parts = cookie.split("=");
+                                cookies[parts.shift().trim()] = decodeURI(parts.join("="));
+                            });
+                        }
+                        // call the reciever that matches most specific
+                        const res = await callReciever(this.#recievers, pathname, method, query, body, cookies);
+                        if (res != null && res.status != null) {
+                            if (res.content != null) {
+                                response.writeHead(res.status, getHeader(enableCors, res.options));
+                                response.end(res.content);
+                            } else if (res.stream != null) {
+                                response.writeHead(res.status, getHeader(enableCors, res.options));
+                                res.stream.pipe(response);
+                            } else if (res.json != null) {
+                                response.writeHead(res.status, getHeader(enableCors, {type: "application/json; charset=utf-8"}));
+                                response.end(JSON.stringify(res.json));
+                            } else {
+                                response.writeHead(res.status, getHeader(enableCors, res.options));
+                                response.end();
+                            }
+                        } else {
+                            throw new Error("response without status returned from service reciever");
+                        }
+                    }
+                } catch (err) {
+                    console.log(`[WebService:${this.#port.toString()}] ERROR during response => ${request.url}`);
+                    console.error(err);
+                    response.writeHead(500, getHeader(enableCors, {type: "application/json; charset=utf-8"}));
+                    response.end(JSON.stringify({
+                        url: request.url,
+                        error: err
+                    }));
+                }
             }
         });
         server.on("upgrade", (request, socket, head) => {
+            const location = URL.parse(request.url, true);
             if (logRequests) {
-                console.log(`[WebService:${this.#port.toString().padEnd(5)}] requesting upgrade => ${location.pathname}`);
+                console.log(`[WebService:${this.#port.toString()}] requesting upgrade => ${location.pathname}`);
             }
-            const urlPath = URL.parse(request.url).pathname;
+            const urlPath = location.pathname;
             const pathname = `/${urlPath.replace(/(^\/|\/$)/g, "")}`;
-            if (this.#sockets.has(pathname)) {
+            if (!this.#sockets.has(pathname) || (this.#accessManager != null && !this.#accessManager.checkAccess(pathname))) {
+                socket.destroy();
+            } else {
                 const wss = this.#sockets.get(pathname);
                 wss.handleUpgrade(request, socket, head);
-            } else {
-                socket.destroy();
             }
         });
+    }
+
+    setAccessManager(accessManager) {
+        if (accessManager != null) {
+            if (!(accessManager instanceof AccessManager)) {
+                throw new TypeError("accessManager has to be an instance of AccessManager or null");
+            }
+            this.#accessManager = accessManager;
+            console.log(`[WebService:${this.port.toString().padEnd(5)}] set access manager: ${this.#accessManager.instanceName}`);
+        } else {
+            this.#accessManager = null;
+            console.log(`[WebService:${this.port.toString().padEnd(5)}] remove access manager`);
+        }
     }
 
     addWebSocket(path, wss) {
