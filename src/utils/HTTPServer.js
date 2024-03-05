@@ -1,92 +1,6 @@
 import HTTP from "http";
 import URL from "url";
-import AccessManager from "./manager/AccessManager.js";
-
-function getOptionsHeader(cors) {
-    const res = {};
-    res["Content-Type"] = "text/plain; charset=utf-8";
-    if (cors) {
-        res["Access-Control-Allow-Origin"] = "*";
-        res["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
-        res["Access-Control-Allow-Headers"] = "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range";
-        res["Access-Control-Max-Age"] = "1728000";
-    }
-    res["Content-Length"] = 0;
-    return res;
-}
-
-function getHeader(cors, options) {
-    const res = {};
-    if (options == null) {
-        options = {};
-    }
-    if (options.nocache != null && options.nocache === true) {
-        res["Cache-Control"] = "no-cache, no-store, must-revalidate";
-        res["Expires"] = "-1";
-    }
-    if (options.type != null) {
-        res["Content-Type"] = options.type;
-    } else {
-        res["Content-Type"] = "text/plain; charset=utf-8";
-    }
-    if (options.length != null) {
-        res["Content-Length"] = options.length;
-    }
-    if (options.language != null) {
-        res["Content-Language"] = options.language;
-    }
-    if (cors) {
-        res["Access-Control-Allow-Origin"] = "*";
-        res["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
-        res["Access-Control-Allow-Headers"] = "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range";
-        res["Access-Control-Expose-Headers"] = "Content-Length,Content-Range";
-    }
-    return res;
-}
-
-async function getRequestBody(request, method, headers) {
-    if (method == "POST" || method == "PUT") {
-        const result = new Promise(function(resolve, reject) {
-            const res = [];
-            request.on("error", (err) => {
-                reject(err);
-            }).on("data", (chunk) => {
-                res.push(chunk);
-            }).on("end", async () => {
-                resolve(res.join(""));
-            });
-        });
-        if (headers["content-type"].indexOf("application/json") >= 0) {
-            try {
-                return JSON.parse(result);
-            } catch (err) {
-                console.error(err);
-                return result;
-            }
-        }
-        return result;
-    }
-    return null;
-}
-
-async function callReciever(recievers, path, method, query, body) {
-    path = path.replace(/(^\/|\/$)/g, "");
-    const parts = path.split("/").map((p) => decodeURI(p));
-    const params = [];
-    while (parts.length) {
-        const uri = `/${parts.join("/")}`;
-        if (recievers.has(uri)) {
-            const reciever = recievers.get(uri);
-            return await reciever(method, params, query, body);
-        }
-        params.unshift(parts.pop());
-    }
-    if (recievers.has("/")) {
-        const reciever = recievers.get("/");
-        return await reciever(method, params, query, body);
-    }
-    return {status: 404};
-}
+import AccessVerifier from "./access/AccessVerifier.js";
 
 export default class HTTPServer {
 
@@ -103,24 +17,24 @@ export default class HTTPServer {
         server.listen(port);
         this.#port = server.address().port;
         server.on("request", async (request, response) => {
-            const location = URL.parse(request.url, true);
-            const urlPath = location.pathname;
-            const pathname = `/${urlPath.replace(/(^\/|\/$)/g, "")}`;
-            if (this.#accessManager != null && !this.#accessManager.checkAccess(pathname)) {
+            if (this.#checkPermission(request)) {
                 console.log(`[WebService:${this.#port.toString()}] access violation => ${request.url}`);
-                response.writeHead(403, getHeader(enableCors, {type: "application/json; charset=utf-8"}));
+                response.writeHead(403, this.#getHeader(enableCors, {type: "application/json; charset=utf-8"}));
                 response.end(JSON.stringify({
                     url: request.url,
                     error: "access violation"
                 }));
             } else {
+                const location = URL.parse(request.url, true);
+                const urlPath = location.pathname;
+                const pathName = `/${urlPath.replace(/(^\/|\/$)/g, "")}`;
                 const method = request.method.toUpperCase();
                 try {
                     if (method === "OPTIONS") {
                         if (logRequests) {
                             console.log(`[WebService:${this.#port.toString()}] requesting OPTIONS`);
                         }
-                        response.writeHead(204, getOptionsHeader(enableCors));
+                        response.writeHead(204, this.#getOptionsHeader(enableCors));
                         response.end();
                     } else {
                         const headers = request.headers;
@@ -129,7 +43,7 @@ export default class HTTPServer {
                             console.log(`[WebService:${this.#port.toString()}] requesting ${method} => ${location.pathname}`);
                         }
                         // parse body
-                        const body = await getRequestBody(request, method, headers);
+                        const body = await this.#getRequestBody(request, method, headers);
                         // parse cookies
                         const cookies = {};
                         if (request.headers.cookie != null) {
@@ -139,19 +53,19 @@ export default class HTTPServer {
                             });
                         }
                         // call the reciever that matches most specific
-                        const res = await callReciever(this.#recievers, pathname, method, query, body, cookies);
+                        const res = await this.#callReciever(this.#recievers, pathName, method, query, body, cookies);
                         if (res != null && res.status != null) {
                             if (res.content != null) {
-                                response.writeHead(res.status, getHeader(enableCors, res.options));
+                                response.writeHead(res.status, this.#getHeader(enableCors, res.options));
                                 response.end(res.content);
                             } else if (res.stream != null) {
-                                response.writeHead(res.status, getHeader(enableCors, res.options));
+                                response.writeHead(res.status, this.#getHeader(enableCors, res.options));
                                 res.stream.pipe(response);
                             } else if (res.json != null) {
-                                response.writeHead(res.status, getHeader(enableCors, {type: "application/json; charset=utf-8"}));
+                                response.writeHead(res.status, this.#getHeader(enableCors, {type: "application/json; charset=utf-8"}));
                                 response.end(JSON.stringify(res.json));
                             } else {
-                                response.writeHead(res.status, getHeader(enableCors, res.options));
+                                response.writeHead(res.status, this.#getHeader(enableCors, res.options));
                                 response.end();
                             }
                         } else {
@@ -161,7 +75,7 @@ export default class HTTPServer {
                 } catch (err) {
                     console.log(`[WebService:${this.#port.toString()}] ERROR during response => ${request.url}`);
                     console.error(err);
-                    response.writeHead(500, getHeader(enableCors, {type: "application/json; charset=utf-8"}));
+                    response.writeHead(500, this.#getHeader(enableCors, {type: "application/json; charset=utf-8"}));
                     response.end(JSON.stringify({
                         url: request.url,
                         error: err
@@ -171,15 +85,15 @@ export default class HTTPServer {
         });
         server.on("upgrade", (request, socket, head) => {
             const location = URL.parse(request.url, true);
-            if (logRequests) {
-                console.log(`[WebService:${this.#port.toString()}] requesting upgrade => ${location.pathname}`);
-            }
             const urlPath = location.pathname;
-            const pathname = `/${urlPath.replace(/(^\/|\/$)/g, "")}`;
-            if (!this.#sockets.has(pathname) || (this.#accessManager != null && !this.#accessManager.checkAccess(pathname))) {
+            const pathName = `/${urlPath.replace(/(^\/|\/$)/g, "")}`;
+            if (logRequests) {
+                console.log(`[WebService:${this.#port.toString()}] requesting upgrade => ${pathName}`);
+            }
+            if (!this.#sockets.has(pathName) || this.#checkPermission(request)) {
                 socket.destroy();
             } else {
-                const wss = this.#sockets.get(pathname);
+                const wss = this.#sockets.get(pathName);
                 wss.handleUpgrade(request, socket, head);
             }
         });
@@ -187,7 +101,7 @@ export default class HTTPServer {
 
     setAccessManager(accessManager) {
         if (accessManager != null) {
-            if (!(accessManager instanceof AccessManager)) {
+            if (!(accessManager instanceof AccessVerifier)) {
                 throw new TypeError("accessManager has to be an instance of AccessManager or null");
             }
             this.#accessManager = accessManager;
@@ -220,6 +134,96 @@ export default class HTTPServer {
 
     get port() {
         return this.#port;
+    }
+
+    #checkPermission(request) {
+        return this.#accessManager != null && !this.#accessManager.checkAccess(request)
+    }
+
+    #getOptionsHeader(cors) {
+        const res = {};
+        res["Content-Type"] = "text/plain; charset=utf-8";
+        if (cors) {
+            res["Access-Control-Allow-Origin"] = "*";
+            res["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+            res["Access-Control-Allow-Headers"] = "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range";
+            res["Access-Control-Max-Age"] = "1728000";
+        }
+        res["Content-Length"] = 0;
+        return res;
+    }
+
+    #getHeader(cors, options) {
+        const res = {};
+        if (options == null) {
+            options = {};
+        }
+        if (options.nocache != null && options.nocache === true) {
+            res["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            res["Expires"] = "-1";
+        }
+        if (options.type != null) {
+            res["Content-Type"] = options.type;
+        } else {
+            res["Content-Type"] = "text/plain; charset=utf-8";
+        }
+        if (options.length != null) {
+            res["Content-Length"] = options.length;
+        }
+        if (options.language != null) {
+            res["Content-Language"] = options.language;
+        }
+        if (cors) {
+            res["Access-Control-Allow-Origin"] = "*";
+            res["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+            res["Access-Control-Allow-Headers"] = "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range";
+            res["Access-Control-Expose-Headers"] = "Content-Length,Content-Range";
+        }
+        return res;
+    }
+
+    async #getRequestBody(request, method, headers) {
+        if (method == "POST" || method == "PUT") {
+            const result = new Promise(function(resolve, reject) {
+                const res = [];
+                request.on("error", (err) => {
+                    reject(err);
+                }).on("data", (chunk) => {
+                    res.push(chunk);
+                }).on("end", async () => {
+                    resolve(res.join(""));
+                });
+            });
+            if (headers["content-type"].indexOf("application/json") >= 0) {
+                try {
+                    return JSON.parse(result);
+                } catch (err) {
+                    console.error(err);
+                    return result;
+                }
+            }
+            return result;
+        }
+        return null;
+    }
+
+    async #callReciever(recievers, pathName, method, query, body) {
+        pathName = pathName.replace(/(^\/|\/$)/g, "");
+        const path = pathName.split("/").map((p) => decodeURI(p));
+        const params = [];
+        while (path.length) {
+            const uri = `/${path.join("/")}`;
+            if (recievers.has(uri)) {
+                const reciever = recievers.get(uri);
+                return await reciever(method, params, query, body);
+            }
+            params.unshift(path.pop());
+        }
+        if (recievers.has("/")) {
+            const reciever = recievers.get("/");
+            return await reciever(method, params, query, body);
+        }
+        return {status: 404};
     }
 
 }

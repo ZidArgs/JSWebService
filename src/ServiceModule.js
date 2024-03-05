@@ -1,4 +1,4 @@
-let SERVICE_COUNTER = 0;
+let INSTANCE_COUNTER = 0;
 
 export default class ServiceModule {
 
@@ -7,7 +7,7 @@ export default class ServiceModule {
     #server;
 
     constructor(server) {
-        this.#index = SERVICE_COUNTER++;
+        this.#index = INSTANCE_COUNTER++;
         this.#server = server;
         console.log(`[${this.instanceName}] service created`);
     }

@@ -39,8 +39,8 @@ export default class StaticService extends ServiceModule {
         }
         if (options.serveFolder != null) {
             this.#serveFolder = path.resolve("./", options.serveFolder);
-            console.log(`[${this.instanceName}] Serving folder: "${this.#serveFolder}"`);
         }
+        console.log(`[${this.instanceName}] Serving folder: "${this.#serveFolder}"`);
         if (options.defaultIndex != null) {
             if (Array.isArray(options.defaultIndex)) {
                 this.#defaultIndex = options.defaultIndex;
