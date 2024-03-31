@@ -43,7 +43,7 @@ export default class HTTPServer {
                             console.log(`[WebService:${this.#port.toString()}] requesting ${method} => ${location.pathname}`);
                         }
                         // parse body
-                        const body = await this.#getRequestBody(request, method, headers);
+                        const body = await this.#resolveRequestBody(request, headers);
                         // parse cookies
                         const cookies = {};
                         if (request.headers.cookie != null) {
@@ -182,29 +182,30 @@ export default class HTTPServer {
         return res;
     }
 
-    async #getRequestBody(request, method, headers) {
-        if (method == "POST" || method == "PUT") {
-            const result = new Promise(function(resolve, reject) {
-                const res = [];
-                request.on("error", (err) => {
-                    reject(err);
-                }).on("data", (chunk) => {
-                    res.push(chunk);
-                }).on("end", async () => {
-                    resolve(res.join(""));
-                });
-            });
-            if (headers["content-type"].indexOf("application/json") >= 0) {
-                try {
-                    return JSON.parse(result);
-                } catch (err) {
-                    console.error(err);
-                    return result;
-                }
+    async #resolveRequestBody(request, headers) {
+        const result = await this.#getRequestBody(request);
+        if (result.length && headers["content-type"]?.includes("application/json")) {
+            try {
+                return JSON.parse(result);
+            } catch (err) {
+                console.error(err);
+                return result;
             }
-            return result;
         }
-        return null;
+        return result;
+    }
+
+    #getRequestBody(request) {
+        return new Promise(function(resolve, reject) {
+            const res = [];
+            request.on("error", (err) => {
+                reject(err);
+            }).on("data", (chunk) => {
+                res.push(chunk);
+            }).on("end", async () => {
+                resolve(res.join(""));
+            });
+        });
     }
 
     async #callReciever(recievers, pathName, method, query, body) {
