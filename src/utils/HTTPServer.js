@@ -43,11 +43,11 @@ export default class HTTPServer {
                             console.log(`[WebService:${this.#port.toString()}] requesting ${method} => ${location.pathname}`);
                         }
                         // parse body
-                        const body = await this.#resolveRequestBody(request, headers);
+                        const body = await this.#resolveRequestBody(request);
                         // parse cookies
                         const cookies = {};
-                        if (request.headers.cookie != null) {
-                            request.headers.cookie.split(";").forEach(function(cookie) {
+                        if (headers.cookie != null) {
+                            headers.cookie.split(";").forEach(function(cookie) {
                                 const parts = cookie.split("=");
                                 cookies[parts.shift().trim()] = decodeURI(parts.join("="));
                             });
@@ -182,13 +182,12 @@ export default class HTTPServer {
         return res;
     }
 
-    async #resolveRequestBody(request, headers) {
+    async #resolveRequestBody(request) {
         const result = await this.#getRequestBody(request);
-        if (result.length && headers["content-type"]?.includes("application/json")) {
+        if (result.length) {
             try {
                 return JSON.parse(result);
-            } catch (err) {
-                console.error(err);
+            } catch {
                 return result;
             }
         }
