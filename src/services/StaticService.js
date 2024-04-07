@@ -1,5 +1,8 @@
 import fs from "fs";
 import path from "path";
+import {
+    jsonReplacer
+} from "../utils/helper/JSON.js";
 import ServiceModule from "../ServiceModule.js";
 
 const DEFAULT_INDEX_FILES = ["index.html", "index.htm"];
@@ -32,6 +35,8 @@ export default class StaticService extends ServiceModule {
 
     #mimeTypes = [];
 
+    #rewrites = [];
+
     constructor(server, options) {
         super(server);
         if (options == null) {
@@ -41,6 +46,10 @@ export default class StaticService extends ServiceModule {
             this.#serveFolder = path.resolve("./", options.serveFolder);
         }
         console.log(`[${this.instanceName}] Serving folder: "${this.#serveFolder}"`);
+        if (options.rewrites != null) {
+            this.#rewrites = this.#resolveRewrites(options.rewrites);
+        }
+        console.log(`[${this.instanceName}] Registered rewrites: ${JSON.stringify(this.#rewrites, jsonReplacer, 4)}`);
         if (options.defaultIndex != null) {
             if (Array.isArray(options.defaultIndex)) {
                 this.#defaultIndex = options.defaultIndex;
@@ -62,6 +71,54 @@ export default class StaticService extends ServiceModule {
             }
         }
         server.onrequest = (method, params, query, body) => this.#onrequest(method, params, query, body);
+    }
+
+    async #onrequest(method, params/* , query, body */) {
+        if (method == "GET") {
+            const reqestPath = params.join("/");
+            const internalRequestPath = this.#redirectPath(reqestPath);
+            const filePath = path.resolve(this.#serveFolder, internalRequestPath);
+            const file = this.#getFile(filePath);
+            if (file != null && file.startsWith(this.#serveFolder)) {
+                const stat = fs.statSync(file);
+                const readStream = fs.createReadStream(file);
+                const type = this.#getMimeType(file);
+                return {
+                    status: 200,
+                    stream: readStream,
+                    options: {
+                        type: type,
+                        length: stat.size
+                    }
+                };
+            } else {
+                console.log(`[${this.instanceName}] Requested file not found: "${internalRequestPath}"`);
+                return {status: 404};
+            }
+        } else {
+            return {status: 405};
+        }
+    }
+
+    #redirectPath(reqestPath) {
+        for (const {matcher, exclude, rewrite, replace} of this.#rewrites) {
+            if (matcher instanceof RegExp && matcher.test(reqestPath)) {
+                if (exclude instanceof RegExp && !exclude.test(reqestPath)) {
+                    if (replace) {
+                        const newPath = reqestPath.replace(matcher, rewrite);
+                        console.log(`[${this.instanceName}] Redirecting: "${reqestPath}" to "${newPath}"`);
+                        return newPath;
+                    } else {
+                        console.log(`[${this.instanceName}] Redirecting: "${reqestPath}" to "${rewrite}"`);
+                        return rewrite;
+                    }
+                }
+            } else if (exclude instanceof RegExp && !exclude.test(reqestPath)) {
+                console.log(`[${this.instanceName}] Redirecting: "${reqestPath}" to "${rewrite}"`);
+                return rewrite;
+            }
+        }
+        return reqestPath;
     }
 
     #getFile(filePath) {
@@ -94,28 +151,50 @@ export default class StaticService extends ServiceModule {
         return DEFAULT_MIME_TYPE;
     }
 
-    async #onrequest(method, params/* , query, body */) {
-        if (method == "GET") {
-            const filePath = path.resolve(this.#serveFolder, params.join("/"));
-            const file = this.#getFile(filePath);
-            if (file != null && file.startsWith(this.#serveFolder)) {
-                const stat = fs.statSync(file);
-                const readStream = fs.createReadStream(file);
-                const type = this.#getMimeType(file);
-                return {
-                    status: 200,
-                    stream: readStream,
-                    options: {
-                        type: type,
-                        length: stat.size
-                    }
-                };
-            } else {
-                return {status: 404};
-            }
-        } else {
-            return {status: 405};
+    #resolveRewrites(config) {
+        if (!Array.isArray(config)) {
+            config = [config];
         }
+        config = config.filter((rule) => {
+            if (typeof rule !== "object" || Array.isArray(rule)) {
+                return false;
+            }
+            if (typeof rule.rewrite !== "string" || rule.rewrite === "") {
+                return false;
+            }
+            if (rule.matcher != null) {
+                if (!(rule.matcher instanceof RegExp) && typeof rule.matcher !== "string" && rule.matcher === "") {
+                    return false;
+                }
+            }
+            if (rule.exclude != null) {
+                if (!(rule.exclude instanceof RegExp) && typeof rule.exclude !== "string" && rule.exclude === "") {
+                    return false;
+                }
+            }
+            return true;
+        });
+        return config.map((rule) => {
+            const res = {
+                rewrite: rule.rewrite,
+                replace: !!rule.replace
+            };
+            if (rule.matcher != null) {
+                if (!(rule.matcher instanceof RegExp)) {
+                    res.matcher = new RegExp(rule.matcher);
+                } else {
+                    res.matcher = rule.matcher;
+                }
+            }
+            if (rule.exclude != null) {
+                if (!(rule.exclude instanceof RegExp)) {
+                    res.exclude = new RegExp(rule.exclude);
+                } else {
+                    res.exclude = rule.exclude;
+                }
+            }
+            return res;
+        });
     }
 
 }

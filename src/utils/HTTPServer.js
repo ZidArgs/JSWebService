@@ -137,7 +137,7 @@ export default class HTTPServer {
     }
 
     #checkPermission(request) {
-        return this.#accessManager != null && !this.#accessManager.checkAccess(request)
+        return this.#accessManager != null && !this.#accessManager.checkAccess(request);
     }
 
     #getOptionsHeader(cors) {
