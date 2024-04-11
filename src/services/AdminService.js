@@ -37,30 +37,30 @@ export default class AdminService extends ServiceModule {
     async #onrequest(method, params, query/* , body */) {
         const isAdmin = this.#isUserAdmin(query.token);
 
-        if (isAdmin) {
-            switch (method) {
-                case "GET": {
-                    if (query.search) {
-                        return this.#getAccountNames(query.search);
-                    }
-                    if (query.username) {
-                        return await this.#getAccountData(query.username);
-                    }
-                    break;
-                }
-                case "PUT": {
-                    return this.#registerAccount(query.name, query.email, query.pass);
-                }
-                case "DELETE": {
-                    return this.#removeAccount(query.username, query.pass);
-                }
-                default: {
-                    return {status: 400};
-                }
-            }
+        if (!isAdmin) {
+            return {status: 403};
         }
 
-        return {status: 400};
+        switch (method) {
+            case "GET": {
+                if (query.search) {
+                    return this.#getAccountNames(query.search);
+                }
+                if (query.username) {
+                    return await this.#getAccountData(query.username);
+                }
+                break;
+            }
+            case "PUT": {
+                return this.#registerAccount(query.name, query.email, query.pass);
+            }
+            case "DELETE": {
+                return this.#removeAccount(query.username, query.pass);
+            }
+            default: {
+                return {status: 400};
+            }
+        }
     }
 
     #isUserAdmin(/* token */) {

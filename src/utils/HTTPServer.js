@@ -1,6 +1,6 @@
 import HTTP from "http";
 import URL from "url";
-import AccessVerifier from "./access/AccessVerifier.js";
+import LocalProxy from "./LocalProxy.js";
 
 export default class HTTPServer {
 
@@ -10,77 +10,74 @@ export default class HTTPServer {
 
     #recievers = new Map();
 
-    #accessManager;
+    #localProxies = new Map();
 
     constructor(port, enableCors = false, logRequests = false) {
         const server = HTTP.createServer();
         server.listen(port);
         this.#port = server.address().port;
         server.on("request", async (request, response) => {
-            if (this.#checkPermission(request)) {
-                console.log(`[WebService:${this.#port.toString()}] access violation => ${request.url}`);
-                response.writeHead(403, this.#getHeader(enableCors, {type: "application/json; charset=utf-8"}));
+            const location = URL.parse(request.url, true);
+            const urlPath = location.pathname;
+            const pathName = `/${urlPath.replace(/(^\/|\/$)/g, "")}`;
+            const method = request.method.toUpperCase();
+            try {
+                const proxy = this.#getLocalProxy(pathName, request);
+                if (proxy != null) {
+                    console.log(`[WebService:${this.#port.toString()}] pass request through proxy ${proxy.instanceName}: ${pathName}`);
+                    proxy.handleRequest(request, response);
+                    return;
+                }
+                if (method === "OPTIONS") {
+                    if (logRequests) {
+                        console.log(`[WebService:${this.#port.toString()}] requesting OPTIONS`);
+                    }
+                    response.writeHead(204, this.#getOptionsHeader(enableCors));
+                    response.end();
+                } else {
+                    const headers = request.headers;
+                    const query = location.query;
+                    if (logRequests) {
+                        console.log(`[WebService:${this.#port.toString()}] requesting ${method} => ${location.pathname}`);
+                    }
+                    // parse body
+                    const body = await this.#resolveRequestBody(request);
+                    // parse cookies
+                    const cookies = {};
+                    if (headers.cookie != null) {
+                        headers.cookie.split(";").forEach(function(cookie) {
+                            const parts = cookie.split("=");
+                            cookies[parts.shift().trim()] = decodeURI(parts.join("="));
+                        });
+                    }
+                    // call the reciever that matches most specific
+                    const res = await this.#callReciever(pathName, method, query, body, cookies);
+                    if (res != null && res.status != null) {
+                        if (res.content != null) {
+                            response.writeHead(res.status, this.#getHeader(enableCors, res.options));
+                            response.end(res.content);
+                        } else if (res.stream != null) {
+                            response.writeHead(res.status, this.#getHeader(enableCors, res.options));
+                            res.stream.pipe(response);
+                        } else if (res.json != null) {
+                            response.writeHead(res.status, this.#getHeader(enableCors, {type: "application/json; charset=utf-8"}));
+                            response.end(JSON.stringify(res.json));
+                        } else {
+                            response.writeHead(res.status, this.#getHeader(enableCors, res.options));
+                            response.end();
+                        }
+                    } else {
+                        throw new Error("response without status returned from service reciever");
+                    }
+                }
+            } catch (err) {
+                console.log(`[WebService:${this.#port.toString()}] ERROR during response => ${request.url}`);
+                console.error(err);
+                response.writeHead(500, this.#getHeader(enableCors, {type: "application/json; charset=utf-8"}));
                 response.end(JSON.stringify({
                     url: request.url,
-                    error: "access violation"
+                    error: err
                 }));
-            } else {
-                const location = URL.parse(request.url, true);
-                const urlPath = location.pathname;
-                const pathName = `/${urlPath.replace(/(^\/|\/$)/g, "")}`;
-                const method = request.method.toUpperCase();
-                try {
-                    if (method === "OPTIONS") {
-                        if (logRequests) {
-                            console.log(`[WebService:${this.#port.toString()}] requesting OPTIONS`);
-                        }
-                        response.writeHead(204, this.#getOptionsHeader(enableCors));
-                        response.end();
-                    } else {
-                        const headers = request.headers;
-                        const query = location.query;
-                        if (logRequests) {
-                            console.log(`[WebService:${this.#port.toString()}] requesting ${method} => ${location.pathname}`);
-                        }
-                        // parse body
-                        const body = await this.#resolveRequestBody(request);
-                        // parse cookies
-                        const cookies = {};
-                        if (headers.cookie != null) {
-                            headers.cookie.split(";").forEach(function(cookie) {
-                                const parts = cookie.split("=");
-                                cookies[parts.shift().trim()] = decodeURI(parts.join("="));
-                            });
-                        }
-                        // call the reciever that matches most specific
-                        const res = await this.#callReciever(this.#recievers, pathName, method, query, body, cookies);
-                        if (res != null && res.status != null) {
-                            if (res.content != null) {
-                                response.writeHead(res.status, this.#getHeader(enableCors, res.options));
-                                response.end(res.content);
-                            } else if (res.stream != null) {
-                                response.writeHead(res.status, this.#getHeader(enableCors, res.options));
-                                res.stream.pipe(response);
-                            } else if (res.json != null) {
-                                response.writeHead(res.status, this.#getHeader(enableCors, {type: "application/json; charset=utf-8"}));
-                                response.end(JSON.stringify(res.json));
-                            } else {
-                                response.writeHead(res.status, this.#getHeader(enableCors, res.options));
-                                response.end();
-                            }
-                        } else {
-                            throw new Error("response without status returned from service reciever");
-                        }
-                    }
-                } catch (err) {
-                    console.log(`[WebService:${this.#port.toString()}] ERROR during response => ${request.url}`);
-                    console.error(err);
-                    response.writeHead(500, this.#getHeader(enableCors, {type: "application/json; charset=utf-8"}));
-                    response.end(JSON.stringify({
-                        url: request.url,
-                        error: err
-                    }));
-                }
             }
         });
         server.on("upgrade", (request, socket, head) => {
@@ -90,26 +87,13 @@ export default class HTTPServer {
             if (logRequests) {
                 console.log(`[WebService:${this.#port.toString()}] requesting upgrade => ${pathName}`);
             }
-            if (!this.#sockets.has(pathName) || this.#checkPermission(request)) {
+            if (!this.#sockets.has(pathName)) {
                 socket.destroy();
             } else {
                 const wss = this.#sockets.get(pathName);
                 wss.handleUpgrade(request, socket, head);
             }
         });
-    }
-
-    setAccessManager(accessManager) {
-        if (accessManager != null) {
-            if (!(accessManager instanceof AccessVerifier)) {
-                throw new TypeError("accessManager has to be an instance of AccessManager or null");
-            }
-            this.#accessManager = accessManager;
-            console.log(`[WebService:${this.port.toString().padEnd(5)}] set access manager: ${this.#accessManager.instanceName}`);
-        } else {
-            this.#accessManager = null;
-            console.log(`[WebService:${this.port.toString().padEnd(5)}] remove access manager`);
-        }
     }
 
     addWebSocket(path, wss) {
@@ -132,12 +116,21 @@ export default class HTTPServer {
         this.#recievers.delete(path);
     }
 
-    get port() {
-        return this.#port;
+    registerLocalProxy(path, proxy) {
+        if (!(proxy instanceof LocalProxy)) {
+            throw new TypeError("proxy has to be an instance of Proxy");
+        }
+        if (!this.#localProxies.has(path)) {
+            this.#localProxies.set(path, proxy);
+        }
     }
 
-    #checkPermission(request) {
-        return this.#accessManager != null && !this.#accessManager.checkAccess(request);
+    unregisterLocalProxy(path) {
+        this.#localProxies.delete(path);
+    }
+
+    get port() {
+        return this.#port;
     }
 
     #getOptionsHeader(cors) {
@@ -207,22 +200,43 @@ export default class HTTPServer {
         });
     }
 
-    async #callReciever(recievers, pathName, method, query, body) {
+    #getLocalProxy(pathName) {
+        pathName = pathName.replace(/(^\/|\/$)/g, "");
+        const path = pathName.split("/").map((p) => decodeURI(p));
+        while (path.length) {
+            const uri = `/${path.join("/")}`;
+            if (this.#localProxies.has(uri)) {
+                return this.#localProxies.get(uri);
+            }
+            path.pop();
+        }
+        if (this.#localProxies.has("/")) {
+            return this.#localProxies.get("/");
+        }
+        return null;
+    }
+
+    async #callReciever(pathName, method, query, body) {
+        if (this.#recievers.size == 0) {
+            console.log(`[WebService:${this.#port.toString()}] no reciever registered`);
+            return {status: 404};
+        }
         pathName = pathName.replace(/(^\/|\/$)/g, "");
         const path = pathName.split("/").map((p) => decodeURI(p));
         const params = [];
         while (path.length) {
             const uri = `/${path.join("/")}`;
-            if (recievers.has(uri)) {
-                const reciever = recievers.get(uri);
+            if (this.#recievers.has(uri)) {
+                const reciever = this.#recievers.get(uri);
                 return await reciever(method, params, query, body);
             }
             params.unshift(path.pop());
         }
-        if (recievers.has("/")) {
-            const reciever = recievers.get("/");
+        if (this.#recievers.has("/")) {
+            const reciever = this.#recievers.get("/");
             return await reciever(method, params, query, body);
         }
+        console.log(`[WebService:${this.#port.toString()}] no matching reciever`);
         return {status: 404};
     }
 

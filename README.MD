@@ -28,7 +28,6 @@ service.registerService(ServiceModule, "/service");
 ### WebService parameters
 | parameter     | default              | effect                                           |
 | ------------- | -------------------- | ------------------------------------------------ |
-| accessManager | DefaultAccessManager | Set the `AccessManager` used for this WebService |
 | enableCors    | false                | Set if the WebService is running in CORS mode    |
 | logRequests   | false                | Should the WebService log all HTTP requests      |
 

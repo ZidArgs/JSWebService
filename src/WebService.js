@@ -18,16 +18,9 @@ export default class WebService {
         if (typeof options !== "object" || Array.isArray(options)) {
             throw new Error("options has to be a dict or null");
         }
-        const {accessManager = null, enableCors = false, logRequests = false} = options ?? {};
+        const {enableCors = false, logRequests = false} = options ?? {};
         this.#server = new HTTP(getPort(port), !!enableCors, !!logRequests);
         console.log(`[WebService:${this.port.toString()}] start server`);
-        if (accessManager != null) {
-            this.#server.setAccessManager(accessManager);
-        }
-    }
-
-    setAccessManager(accessManager) {
-        this.#server.setAccessManager(accessManager);
     }
 
     registerService(Module, endpoint, options) {
@@ -39,6 +32,12 @@ export default class WebService {
         const res = new Module(wrapper, options);
         console.log(`[WebService:${this.port.toString()}] registered service: ${res.instanceName} => "${endpoint}"`);
         return res;
+    }
+
+    registerLocalProxy(proxy, endpoint) {
+        endpoint = `/${endpoint.replace(/^\/|\/$/, "")}`;
+        this.#server.registerLocalProxy(endpoint, proxy);
+        console.log(`[WebService:${this.port.toString()}] registered proxy: ${proxy.instanceName} => "${endpoint}"`);
     }
 
     get port() {

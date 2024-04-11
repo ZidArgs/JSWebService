@@ -1,6 +1,6 @@
 {
   "name": "webservice",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "helper for creating simple webservices",
   "author": "Denis Peters (ZidArgs)",
   "license": "MIT",
@@ -24,6 +24,7 @@
   },
   "scripts": {
     "lint": "yarn eslint .",
-    "lintfix": "yarn eslint --fix ."
+    "lintfix": "yarn eslint --fix .",
+    "serve": "node ./server.js"
   }
 }
