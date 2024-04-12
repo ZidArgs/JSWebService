@@ -23,7 +23,7 @@ export default class WebService {
         console.log(`[WebService:${this.port.toString()}] start server`);
     }
 
-    registerService(Module, endpoint, options) {
+    registerServiceModule(Module, endpoint, options) {
         if (!(Module.prototype instanceof ServiceModule)) {
             throw new Error("Error registering service: Only children of ServiceModule can be registered");
         }
