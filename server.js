@@ -6,7 +6,7 @@ const enableCors = process.argv.indexOf("-cors") >= 1;
 const port = process.argv.indexOf("-port") >= 1 ? process.argv[process.argv.indexOf("-port") + 1] : "12345";
 
 const localService = new WebService("12346");
-localService.registerService(TestResponseService, "");
+localService.registerServiceModule(TestResponseService, "");
 
 const service = new WebService(port, {enableCors});
 const localProxy = new LocalProxy("12346");

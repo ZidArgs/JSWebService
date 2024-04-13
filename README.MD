@@ -22,7 +22,7 @@ const service = new WebService(/*port*/ 8080, /*options*/ {
     logRequests: true
 });
 // register the service module to listen to the path '/service'
-service.registerService(ServiceModule, "/service");
+service.registerServiceModule(ServiceModule, "/service");
 ```
 
 ### WebService parameters
@@ -42,7 +42,7 @@ The StaticService is used to serve files directly from the filesystem.
 // get the StaticService module
 const StaticService = require("webservice/services/StaticService.js");
 // register the StaticService to listen to the path '/static'
-service.registerService(StaticService, "/static", {
+service.registerServiceModule(StaticService, "/static", {
      // set the folder to be read to './mycontent' (optional; default = './static')
     serveFolder: "./mycontent",
     // set default index files (optional; default = ["index.html", "index.htm"])
