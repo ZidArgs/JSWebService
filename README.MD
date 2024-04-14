@@ -13,23 +13,25 @@ Any number of ServiceModules can be added to the WebService.
 
 ```JavaScript
 // get the WebService
-const WebService = require('webservice');
+import WebService from "jswebservice/WebService.js";
 // get any service module
-const ServiceModule = require('./ServiceModule.js');
+import MyServiceModule from "/path/to/MyServiceModule.js";
 // open WebService
 const service = new WebService(/*port*/ 8080, /*options*/ {
     enableCors: false,
     logRequests: true
 });
-// register the service module to listen to the path '/service'
+// register the service module to listen to the path "/service"
 service.registerServiceModule(ServiceModule, "/service");
+// you can also use path parameters like so (allowed characters [a-zA-Z0-9_])
+service.registerServiceModule(ServiceModule, "/service/{serviceName}");
 ```
 
 ### WebService parameters
-| parameter     | default              | effect                                           |
-| ------------- | -------------------- | ------------------------------------------------ |
-| enableCors    | false                | Set if the WebService is running in CORS mode    |
-| logRequests   | false                | Should the WebService log all HTTP requests      |
+| parameter     | default | effect                                           |
+| ------------- | ------- | ------------------------------------------------ |
+| enableCors    | false   | Set if the WebService is running in CORS mode    |
+| logRequests   | false   | Should the WebService log all HTTP requests      |
 
 ## Using the StaticService
 
@@ -40,16 +42,16 @@ The StaticService is used to serve files directly from the filesystem.
 
 ```JavaScript
 // get the StaticService module
-const StaticService = require("webservice/services/StaticService.js");
+import StaticService from "jswebservice/services/StaticService.js";
 // register the StaticService to listen to the path '/static'
 service.registerServiceModule(StaticService, "/static", {
-     // set the folder to be read to './mycontent' (optional; default = './static')
+    // set the folder to be read to './mycontent' (optional; default = './static')
     serveFolder: "./mycontent",
     // set default index files (optional; default = ["index.html", "index.htm"])
     defaultIndex: "index.html index.json",
-     // set mimeTypes (optional)
-     /*
-     default = {
+    // set mimeTypes (optional)
+    /*
+    default = {
         // typical website files
         "html?": "text/html; charset=utf-8",
         "css": "text/css; charset=utf-8",
@@ -66,7 +68,7 @@ service.registerServiceModule(StaticService, "/static", {
         "json": "application/json; charset=utf-8",
         "xml": "application/xml; charset=utf-8",
     }
-     */
+    */
     mimeTypes: {
         "html?": "text/html; charset=utf-8"
     }
@@ -86,16 +88,26 @@ Additionally a WebSocket-Server can be created.
 *Example:*
 
 ```JavaScript
-class ServiceModule {
+import ServiceModule from "jswebservice/ServiceModule.js";
+
+export default class MyServiceModule extends ServiceModule {
 
     constructor(server, options /*optional*/) {
-        // create a WebSocket-Server for the ServiceModule
+        // create a WebSocket-Server for the MyServiceModule
         let wss = server.getWebSocket();
         wss.onmessage = function(sender, msg) {
             // return the data recieved by sender
             wss.send(sender, msg);
         };
-        server.onrequest = function(method, query, body) {
+        server.onrequest = function(method, params, query, body) {
+            // method: holds the request method used e.g. "POST"
+            // params: holds all named path params and the following special ones as a dict
+            //         - "@restPath"   holds the rest of the path not including the matched path
+            //         - "@fullPath"   holds the full request path
+            //         - "@path"       holds the matched path
+            // query: holds the search/query parameters as a dict
+            // body: holds the body data; if the body data was in JSON format it will be a dict
+
             // return json data which will be encoded and mimetype will be set
             return {
                 status: 200,
@@ -130,7 +142,7 @@ class ServiceModule {
 }
 ```
 
-## Controlling the WebSocket
+## Working with the WebSocket
 
 A very simplistic example of a chat service.
 

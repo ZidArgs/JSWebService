@@ -1,14 +1,14 @@
 {
-  "name": "webservice",
-  "version": "2.0.5",
+  "name": "jswebservice",
+  "version": "2.1.0",
   "description": "helper for creating simple webservices",
-  "author": "Denis Peters (ZidArgs)",
+  "author": "Denis Weiß (ZidArgs)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@bitbucket.org/zidargs/webservice.git"
+    "url": "git+ssh://git@bitbucket.org/zidargs/jswebservice.git"
   },
-  "homepage": "https://bitbucket.org/zidargs/webservice/src",
+  "homepage": "https://bitbucket.org/zidargs/jswebservice/src",
   "type": "module",
   "dependencies": {
     "ws": "^7.2.1"

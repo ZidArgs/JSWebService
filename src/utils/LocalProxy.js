@@ -8,15 +8,21 @@ export default class LocalProxy {
 
     #port = "";
 
-    constructor(port) {
+    #hostname = "localhost";
+
+    #logRequests = false;
+
+    constructor(port, hostname = "localhost", logRequests = false) {
         this.#index = INSTANCE_COUNTER++;
         this.#port = port;
-        console.log(`[${this.instanceName}] proxy created -> http://localhost:${port}`);
+        this.#hostname = hostname;
+        this.#logRequests = logRequests;
+        console.log(`[${this.instanceName}] proxy created -> http://${this.#hostname}:${port}`);
     }
 
     handleRequest(clientRequest, clientResponse) {
         const options = {
-            hostname: "localhost",
+            hostname: this.#hostname,
             port: this.#port,
             path: clientRequest.url,
             method: clientRequest.method,
@@ -24,14 +30,18 @@ export default class LocalProxy {
         };
 
         const proxy = HTTP.request(options, (res) => {
-            console.log(`[${this.instanceName}] recieving response from (${clientRequest.method}) http://localhost:${this.#port}${clientRequest.url}`);
+            if (this.#logRequests) {
+                console.log(`[${this.instanceName}] recieving response from (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
+            }
             clientResponse.writeHead(res.statusCode, res.headers);
             res.pipe(clientResponse, {
                 end: true
             });
         });
 
-        console.log(`[${this.instanceName}] sending request to (${clientRequest.method}) http://localhost:${this.#port}${clientRequest.url}`);
+        if (this.#logRequests) {
+            console.log(`[${this.instanceName}] sending request to (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
+        }
         clientRequest.pipe(proxy, {
             end: true
         });

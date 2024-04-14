@@ -1,7 +1,3 @@
-/**
- * NOTE: not usable in FireFox as of now
- */
-
 export default class MessageBuffer {
 
     #messages = [];

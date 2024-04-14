@@ -75,7 +75,7 @@ export default class StaticService extends ServiceModule {
 
     async #onrequest(method, params/* , query, body */) {
         if (method == "GET") {
-            const reqestPath = params.join("/");
+            const reqestPath = params["@restPath"];
             const internalRequestPath = this.#redirectPath(reqestPath);
             const filePath = path.resolve(this.#serveFolder, internalRequestPath);
             const file = this.#getFile(filePath);

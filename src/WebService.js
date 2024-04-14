@@ -23,6 +23,10 @@ export default class WebService {
         console.log(`[WebService:${this.port.toString()}] start server`);
     }
 
+    addRewriteRule(rule) {
+        this.#server.addRewriteRule(rule);
+    }
+
     registerServiceModule(Module, endpoint, options) {
         if (!(Module.prototype instanceof ServiceModule)) {
             throw new Error("Error registering service: Only children of ServiceModule can be registered");

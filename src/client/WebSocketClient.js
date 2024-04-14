@@ -1,7 +1,3 @@
-/**
- * NOTE: not usable in FireFox as of now
- */
-
 import MessageBuffer from "./MessageBuffer.js";
 
 const EMPTY_FN = function() {};
