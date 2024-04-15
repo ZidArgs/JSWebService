@@ -28,6 +28,10 @@ export default class HTTPServer {
             const originalPath = `/${urlPath.replace(/(^\/|\/$)/g, "")}`;
             const method = request.method.toUpperCase();
             try {
+                if (logRequests) {
+                    console.log("--- START REQUEST ---");
+                    console.log(`[WebService:${this.#port.toString()}] request path: ${originalPath}`);
+                }
                 const proxy = this.#getLocalProxy(originalPath, request);
                 if (proxy != null) {
                     if (logRequests) {
@@ -74,6 +78,10 @@ export default class HTTPServer {
                         } else {
                             response.writeHead(res.status, this.#getHeader(enableCors, res.options));
                             response.end();
+                        }
+                        if (logRequests) {
+                            console.log("--- END REQUEST ---");
+                            console.log("");
                         }
                     } else {
                         throw new Error("response without status returned from service reciever");
