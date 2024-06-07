@@ -37,6 +37,17 @@ export default class HTTPServer {
                     if (logRequests) {
                         console.log(`[WebService:${this.#port.toString()}] pass request through proxy ${proxy.instanceName}: ${originalPath}`);
                     }
+                    proxy.on("error", (err) => {
+                        console.error(`[WebService:${this.#port.toString()}] error handling proxy ${proxy.instanceName}: ${originalPath} -> ${err.code}`);
+                        response.writeHead(500, this.#getHeader(enableCors, {type: "application/json; charset=utf-8"}));
+                        response.end(JSON.stringify({
+                            url: request.url,
+                            error: `Error handling Proxy: ${err.code}`
+                        }));
+                    });
+                    proxy.on("close", () => {
+                        proxy.removeAllListeners();
+                    });
                     proxy.handleRequest(request, response);
                     return;
                 }

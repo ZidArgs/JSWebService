@@ -1,8 +1,11 @@
 import HTTP from "http";
+import {
+    EventEmitter
+} from "events";
 
 let INSTANCE_COUNTER = 0;
 
-export default class LocalProxy {
+export default class LocalProxy extends EventEmitter {
 
     #index = 0;
 
@@ -13,6 +16,7 @@ export default class LocalProxy {
     #logRequests = false;
 
     constructor(port, hostname = "localhost", logRequests = false) {
+        super();
         this.#index = INSTANCE_COUNTER++;
         this.#port = port;
         this.#hostname = hostname;
@@ -37,6 +41,15 @@ export default class LocalProxy {
             res.pipe(clientResponse, {
                 end: true
             });
+        });
+
+        proxy.on("error", (err) => {
+            console.error(`[${this.instanceName}] error handling request at (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
+            this.emit("error", err);
+        });
+
+        proxy.on("close", () => {
+            this.emit("close");
         });
 
         if (this.#logRequests) {
