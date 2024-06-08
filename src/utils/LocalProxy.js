@@ -24,7 +24,7 @@ export default class LocalProxy extends EventEmitter {
         console.log(`[${this.instanceName}] proxy created -> http://${this.#hostname}:${port}`);
     }
 
-    handleRequest(clientRequest, clientResponse) {
+    handleRequest(clientRequest, clientResponse, enableCors = false) {
         const options = {
             hostname: this.#hostname,
             port: this.#port,
@@ -45,11 +45,11 @@ export default class LocalProxy extends EventEmitter {
 
         proxy.on("error", (err) => {
             console.error(`[${this.instanceName}] error handling request at (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
-            this.emit("error", err);
-        });
-
-        proxy.on("close", () => {
-            this.emit("close");
+            clientResponse.writeHead(500, this.#getHeader(enableCors));
+            clientResponse.end(JSON.stringify({
+                url: clientRequest.url,
+                error: `Error handling Proxy: ${err.code}`
+            }));
         });
 
         if (this.#logRequests) {
@@ -62,6 +62,18 @@ export default class LocalProxy extends EventEmitter {
 
     get instanceName() {
         return `${this.constructor.name}#${this.#index}`;
+    }
+
+    #getHeader(cors) {
+        const res = {};
+        res["Content-Type"] = "text/plain; charset=utf-8";
+        if (cors) {
+            res["Access-Control-Allow-Origin"] = "*";
+            res["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+            res["Access-Control-Allow-Headers"] = "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range";
+            res["Access-Control-Expose-Headers"] = "Content-Length,Content-Range";
+        }
+        return res;
     }
 
 }
