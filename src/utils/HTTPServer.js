@@ -39,6 +39,9 @@ export default class HTTPServer {
                     }
                     proxy.on("error", (err) => {
                         console.error(`[WebService:${this.#port.toString()}] error handling proxy ${proxy.instanceName}: ${originalPath} -> ${err.code}`);
+                        if (response.closed) {
+                            return;
+                        }
                         response.writeHead(500, this.#getHeader(enableCors, {type: "application/json; charset=utf-8"}));
                         response.end(JSON.stringify({
                             url: request.url,
