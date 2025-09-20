@@ -1,5 +1,5 @@
 import HTTP from "http";
-import URL from "url";
+import {URL} from "url";
 import LocalProxy from "./LocalProxy.js";
 
 const PATH_MATCHER_REGEXP = /^\/(?:(?:(?:[^{}/]+|\{[a-zA-Z0-9_]+\})\/)*(?:[^{}/]+|\{[a-zA-Z0-9_]+\}))?$/;
@@ -23,7 +23,7 @@ export default class HTTPServer {
         server.listen(port);
         this.#port = server.address().port;
         server.on("request", async (request, response) => {
-            const location = URL.parse(request.url, true);
+            const location = new URL(request.url, "http://localhost");
             const urlPath = location.pathname;
             const originalPath = `/${urlPath.replace(/(^\/|\/$)/g, "")}`;
             const method = request.method.toUpperCase();

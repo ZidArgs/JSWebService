@@ -1,6 +1,6 @@
 {
   "name": "jswebservice",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "description": "helper for creating simple webservices",
   "author": "Denis Weiß (ZidArgs)",
   "license": "MIT",
