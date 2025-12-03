@@ -2,10 +2,13 @@ import HTTP from "http";
 import {
     EventEmitter
 } from "events";
+import Logger from "./Logger.js";
 
 let INSTANCE_COUNTER = 0;
 
 export default class LocalProxy extends EventEmitter {
+
+    #logger = console;
 
     #index = 0;
 
@@ -18,10 +21,15 @@ export default class LocalProxy extends EventEmitter {
     constructor(port, hostname = "localhost", logRequests = false) {
         super();
         this.#index = INSTANCE_COUNTER++;
-        this.#port = port;
+        this.#port = +port;
         this.#hostname = hostname;
         this.#logRequests = logRequests;
-        console.log(`[${this.instanceName}] proxy created -> http://${this.#hostname}:${port}`);
+        this.#logger = new Logger(`Proxy            : ${this.instanceName}`);
+        this.#logger.log(`proxy created (${this.constructor.name}) -> http://${this.#hostname}:${port}`);
+    }
+
+    get port() {
+        return this.#port;
     }
 
     handleRequest(clientRequest, clientResponse, enableCors = false) {
@@ -35,7 +43,7 @@ export default class LocalProxy extends EventEmitter {
 
         const proxy = HTTP.request(options, (res) => {
             if (this.#logRequests) {
-                console.log(`[${this.instanceName}] recieving response from (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
+                this.logger.log(`recieving response from (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
             }
             clientResponse.writeHead(res.statusCode, res.headers);
             res.pipe(clientResponse, {
@@ -44,7 +52,7 @@ export default class LocalProxy extends EventEmitter {
         });
 
         proxy.on("error", (err) => {
-            console.error(`[${this.instanceName}] error handling request at (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
+            this.logger.error(`error handling request at (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
             clientResponse.writeHead(500, this.#getHeader(enableCors));
             clientResponse.end(JSON.stringify({
                 url: clientRequest.url,
@@ -53,7 +61,7 @@ export default class LocalProxy extends EventEmitter {
         });
 
         if (this.#logRequests) {
-            console.log(`[${this.instanceName}] sending request to (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
+            this.logger.log(`sending request to (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
         }
         clientRequest.pipe(proxy, {
             end: true
@@ -61,7 +69,7 @@ export default class LocalProxy extends EventEmitter {
     }
 
     get instanceName() {
-        return `${this.constructor.name}#${this.#index}`;
+        return `Proxy#${this.#index.toString().padStart(3, "0")}`;
     }
 
     #getHeader(cors) {

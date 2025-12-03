@@ -28,10 +28,10 @@ service.registerServiceModule(ServiceModule, "/service/{serviceName}");
 ```
 
 ### WebService parameters
-| parameter     | default | effect                                           |
-| ------------- | ------- | ------------------------------------------------ |
-| enableCors    | false   | Set if the WebService is running in CORS mode    |
-| logRequests   | false   | Should the WebService log all HTTP requests      |
+| parameter   | default | effect                                        |
+| ----------- | ------- | --------------------------------------------- |
+| enableCors  | false   | Set if the WebService is running in CORS mode |
+| logRequests | false   | Should the WebService log all HTTP requests   |
 
 ## Using the StaticService
 
@@ -163,7 +163,7 @@ class ChatModule {
         wss.onmessage = function(sender, msg) {
             if (msg.type === "kick") {
                 // close senders connection
-                wss.close(msg.reciever);
+                wss.close(msg.receiver);
             }
 
             let data = {
@@ -171,13 +171,13 @@ class ChatModule {
                 body: msg.body
             };
 
-            if (!!msg.reciever) {
-                if (Array.isArray(msg.reciever)) {
+            if (!!msg.receiver) {
+                if (Array.isArray(msg.receiver)) {
                     // send the message to multiple users
-                    wss.sendMulti(msg.reciever, data);
+                    wss.sendMulti(msg.receiver, data);
                 } else {
                     // send the message to one user
-                    wss.send(msg.reciever, data);
+                    wss.send(msg.receiver, data);
                 }
             } else {
                 // send the message to everyone but the sender

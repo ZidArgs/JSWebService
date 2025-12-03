@@ -23,14 +23,18 @@ export default class ServiceWrapper {
 
     set onrequest(value) {
         if (typeof value == "function") {
-            this.#server.addReciever(this.#path, value);
+            this.#server.addReceiver(this.#path, value);
         } else {
-            this.#server.removeReciever(this.#path);
+            this.#server.removeReceiver(this.#path);
         }
     }
 
     get port() {
         return this.#server.port;
+    }
+
+    get logger() {
+        return this.#server.logger;
     }
 
 }

@@ -12,8 +12,8 @@ export default class TestResponseService extends ServiceModule {
     }
 
     async #onrequest(method, params, query) {
-        console.log(`[${this.instanceName}] Recieving request: (${method}) ${JSON.stringify(params)} ${JSON.stringify(query)}`);
-        console.log(`[${this.instanceName}] Sending success`);
+        this.logger.log(`Recieving request: (${method}) ${JSON.stringify(params)} ${JSON.stringify(query)}`);
+        this.logger.log("Sending success");
         return {
             status: 200,
             content: "Success"

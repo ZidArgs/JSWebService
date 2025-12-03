@@ -1,6 +1,8 @@
+import LoggableMixin from "../../mixins/LoggableMixin.js";
+
 let INSTANCE_COUNTER = 0;
 
-export default class AbstractCredentials {
+export default class AbstractCredentials extends LoggableMixin() {
 
     #index = 0;
 
@@ -9,7 +11,7 @@ export default class AbstractCredentials {
             throw new Error("can not construct abstract class");
         }
         this.#index = INSTANCE_COUNTER++;
-        console.log(`[${this.instanceName}] created`);
+        this.logger.log(`credentials created (${this.constructor.name})`);
     }
 
     get index() {
@@ -17,7 +19,7 @@ export default class AbstractCredentials {
     }
 
     get instanceName() {
-        return `${this.constructor.name}#${this.index}`;
+        return `Cred#${this.#index.toString().padStart(3, "0")}`;
     }
 
     verifyCredentials() {

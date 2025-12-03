@@ -94,59 +94,59 @@ export default class WebSocketServer {
         });
     }
 
-    has(reciever) {
-        return this.#sockets.has(reciever);
+    has(receiver) {
+        return this.#sockets.has(receiver);
     }
 
-    close(reciever) {
-        if (this.#sockets.has(reciever)) {
-            this.#sockets.get(reciever).close();
-            this.#sockets.delete(reciever);
+    close(receiver) {
+        if (this.#sockets.has(receiver)) {
+            this.#sockets.get(receiver).close();
+            this.#sockets.delete(receiver);
         }
     }
 
-    send(reciever, data) {
+    send(receiver, data) {
         const msg = JSON.stringify({
             type: "data",
             data: data
         });
-        if (this.#sockets.has(reciever)) {
-            this.#sockets.get(reciever).send(msg);
+        if (this.#sockets.has(receiver)) {
+            this.#sockets.get(receiver).send(msg);
         }
     }
 
-    sendMulti(recievers, data) {
+    sendMulti(receivers, data) {
         const msg = JSON.stringify({
             type: "data",
             data: data
         });
-        for (const reciever of recievers) {
-            if (this.#sockets.has(reciever)) {
-                this.#sockets.get(reciever).send(msg);
+        for (const receiver of receivers) {
+            if (this.#sockets.has(receiver)) {
+                this.#sockets.get(receiver).send(msg);
             }
         }
     }
 
     sendAll(data) {
-        const recievers = this.#sockets.keys();
+        const receivers = this.#sockets.keys();
         const msg = JSON.stringify({
             type: "data",
             data: data
         });
-        for (const reciever of recievers) {
-            this.#sockets.get(reciever).send(msg);
+        for (const receiver of receivers) {
+            this.#sockets.get(receiver).send(msg);
         }
     }
 
     sendAllBut(ignored, data) {
-        const recievers = this.#sockets.keys();
+        const receivers = this.#sockets.keys();
         const msg = JSON.stringify({
             type: "data",
             data: data
         });
-        for (const reciever of recievers) {
-            if (reciever == ignored) {
-                this.#sockets.get(reciever).send(msg);
+        for (const receiver of receivers) {
+            if (receiver == ignored) {
+                this.#sockets.get(receiver).send(msg);
             }
         }
     }

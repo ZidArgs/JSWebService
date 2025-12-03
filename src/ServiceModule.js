@@ -1,15 +1,19 @@
+import LoggableMixin from "./mixins/LoggableMixin.js";
+
 let INSTANCE_COUNTER = 0;
 
-export default class ServiceModule {
+export default class ServiceModule extends LoggableMixin() {
 
     #index = 0;
 
     #server;
 
     constructor(server) {
+        super();
         this.#index = INSTANCE_COUNTER++;
         this.#server = server;
-        console.log(`[${this.instanceName}] service created`);
+        this.logger = server.logger.derive(this.instanceName);
+        this.logger.log(`service created (${this.constructor.name})`);
     }
 
     get index() {
@@ -21,7 +25,7 @@ export default class ServiceModule {
     }
 
     get instanceName() {
-        return `${this.constructor.name}#${this.index}`;
+        return `Service#${this.#index.toString().padStart(3, "0")}`;
     }
 
 }

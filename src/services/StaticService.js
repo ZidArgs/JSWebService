@@ -45,11 +45,11 @@ export default class StaticService extends ServiceModule {
         if (options.serveFolder != null) {
             this.#serveFolder = path.resolve("./", options.serveFolder);
         }
-        console.log(`[${this.instanceName}] Serving folder: "${this.#serveFolder}"`);
+        this.logger.log(`Serving folder: "${this.#serveFolder}"`);
         if (options.rewrites != null) {
             this.#rewrites = this.#resolveRewrites(options.rewrites);
         }
-        console.log(`[${this.instanceName}] Registered rewrites: ${JSON.stringify(this.#rewrites, jsonReplacer, 4)}`);
+        this.logger.log(`Registered rewrites: ${JSON.stringify(this.#rewrites, jsonReplacer, 4)}`);
         if (options.defaultIndex != null) {
             if (Array.isArray(options.defaultIndex)) {
                 this.#defaultIndex = options.defaultIndex;
@@ -92,7 +92,7 @@ export default class StaticService extends ServiceModule {
                     }
                 };
             } else {
-                console.log(`[${this.instanceName}] Requested file not found: "${internalRequestPath}"`);
+                this.logger.log(`Requested file not found: "${internalRequestPath}"`);
                 return {status: 404};
             }
         } else {
@@ -106,15 +106,15 @@ export default class StaticService extends ServiceModule {
                 if (exclude instanceof RegExp && !exclude.test(reqestPath)) {
                     if (replace) {
                         const newPath = reqestPath.replace(matcher, rewrite);
-                        console.log(`[${this.instanceName}] Redirecting: "${reqestPath}" to "${newPath}"`);
+                        this.logger.log(`Redirecting: "${reqestPath}" to "${newPath}"`);
                         return newPath;
                     } else {
-                        console.log(`[${this.instanceName}] Redirecting: "${reqestPath}" to "${rewrite}"`);
+                        this.logger.log(`Redirecting: "${reqestPath}" to "${rewrite}"`);
                         return rewrite;
                     }
                 }
             } else if (exclude instanceof RegExp && !exclude.test(reqestPath)) {
-                console.log(`[${this.instanceName}] Redirecting: "${reqestPath}" to "${rewrite}"`);
+                this.logger.log(`Redirecting: "${reqestPath}" to "${rewrite}"`);
                 return rewrite;
             }
         }

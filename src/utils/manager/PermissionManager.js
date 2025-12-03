@@ -1,4 +1,6 @@
-export default class PermissionManager {
+import LoggableMixin from "../../mixins/LoggableMixin.js";
+
+export default class PermissionManager extends LoggableMixin() {
 
     checkUserPermission(/* userId, permissionId */) {
         // const user = userStorage.get(userId)

@@ -18,10 +18,10 @@ export default class TokenCredentials extends AbstractCredentials {
                 throw new TypeError("tokenManager has to be an instance of AbstractTokenManager or null");
             }
             this.#tokenManager = tokenManager;
-            console.log(`[${this.instanceName}] set token manager: ${this.#tokenManager.instanceName}`);
+            this.logger.log(`set token manager: ${this.#tokenManager.instanceName}`);
         } else {
             this.#tokenManager = null;
-            console.log(`[${this.instanceName}] remove token manager`);
+            this.logger.log("remove token manager");
         }
     }
 

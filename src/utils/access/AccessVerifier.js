@@ -1,8 +1,9 @@
+import LoggableMixin from "../../mixins/LoggableMixin.js";
 import AbstractCredentials from "../credentials/AbstractCredentials.js";
 
 let INSTANCE_COUNTER = 0;
 
-export default class AccessVerifier {
+export default class AccessVerifier extends LoggableMixin() {
 
     #index = 0;
 
@@ -12,7 +13,7 @@ export default class AccessVerifier {
 
     constructor() {
         this.#index = INSTANCE_COUNTER++;
-        console.log(`[${this.instanceName}] created`);
+        this.logger.log(`access verifier created (${this.constructor.name})`);
     }
 
     get index() {
@@ -20,7 +21,7 @@ export default class AccessVerifier {
     }
 
     get instanceName() {
-        return `${this.constructor.name}#${this.index}`;
+        return `Access#${this.#index.toString().padStart(3, "0")}`;
     }
 
     checkAccess(request) {
@@ -41,7 +42,7 @@ export default class AccessVerifier {
     setPublic(endpoint, isPublic = false) {
         endpoint = `/${endpoint.replace(/^\/|\/$/, "")}`;
         this.#servicePublicIndex.set(endpoint, isPublic);
-        console.log(`[${this.instanceName}] set public mode for "${endpoint}" to {${isPublic.toString()}}`);
+        this.logger.log(`set public mode for "${endpoint}" to {${isPublic.toString()}}`);
     }
 
     checkPublic(pathName) {
@@ -66,7 +67,7 @@ export default class AccessVerifier {
             }
             if (!this.#credentialsManagerList.has(credentialsManager)) {
                 this.#credentialsManagerList.add(credentialsManager);
-                console.log(`[${this.instanceName}] add credentials manager: ${credentialsManager.instanceName}`);
+                this.logger.log(`add credentials manager: ${credentialsManager.instanceName}`);
             }
         }
     }
@@ -78,7 +79,7 @@ export default class AccessVerifier {
             }
             if (this.#credentialsManagerList.has(credentialsManager)) {
                 this.#credentialsManagerList.delete(credentialsManager);
-                console.log(`[${this.instanceName}] remove credentials manager: ${credentialsManager.instanceName}`);
+                this.logger.log(`remove credentials manager: ${credentialsManager.instanceName}`);
             }
         }
     }

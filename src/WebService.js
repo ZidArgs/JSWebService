@@ -1,6 +1,7 @@
 import HTTP from "./utils/HTTPServer.js";
 import ServiceWrapper from "./utils/ServiceWrapper.js";
 import ServiceModule from "./ServiceModule.js";
+import Logger from "./utils/Logger.js";
 
 function getPort(value) {
     const port = parseInt(value);
@@ -12,6 +13,8 @@ function getPort(value) {
 
 export default class WebService {
 
+    #logger = console;
+
     #server = null;
 
     constructor(port = 0, options = {}) {
@@ -20,7 +23,13 @@ export default class WebService {
         }
         const {enableCors = false, logRequests = false} = options ?? {};
         this.#server = new HTTP(getPort(port), !!enableCors, !!logRequests);
-        console.log(`[WebService:${this.port.toString()}] start server`);
+        this.#logger = new Logger(`WebService:${this.port.toString().padStart(5, "0")}`);
+        this.#server.logger = this.#logger;
+        this.#logger.log("start server");
+    }
+
+    get port() {
+        return this.#server.port;
     }
 
     addRewriteRule(rule) {
@@ -34,18 +43,14 @@ export default class WebService {
         endpoint = `/${endpoint.replace(/^\/|\/$/, "")}`;
         const wrapper = new ServiceWrapper(this.#server, endpoint);
         const res = new Module(wrapper, options);
-        console.log(`[WebService:${this.port.toString()}] registered service: ${res.instanceName} => "${endpoint}"`);
+        this.#logger.log(`registered service: ${res.instanceName} => "${endpoint}"`);
         return res;
     }
 
     registerLocalProxy(proxy, endpoint) {
         endpoint = `/${endpoint.replace(/^\/|\/$/, "")}`;
         this.#server.registerLocalProxy(endpoint, proxy);
-        console.log(`[WebService:${this.port.toString()}] registered proxy: ${proxy.instanceName} => "${endpoint}"`);
-    }
-
-    get port() {
-        return this.#server.port;
+        this.#logger.log(`registered proxy: ${proxy.instanceName} => "${endpoint}"`);
     }
 
 }

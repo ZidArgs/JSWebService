@@ -1,5 +1,6 @@
 import fs from "fs";
 import crypto from "crypto";
+import LoggableMixin from "../../mixins/LoggableMixin.js";
 
 const FILENAME = __dirname + "/data/accounts.js";
 const ACCOUNTS = JSON.parse(fs.readFileSync(FILENAME).toString());
@@ -9,7 +10,7 @@ function hashPass(password, salt) {
 }
 
 // TODO add permission checks for altering user data
-export default class AccountManager {
+export default class AccountManager extends LoggableMixin() {
 
     add(userId, email, password) {
         if (ACCOUNTS[userId] != null) {
