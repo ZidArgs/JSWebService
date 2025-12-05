@@ -18,7 +18,6 @@ export default class AdminService extends ServiceModule {
         this.#wss = server.getWebSocket();
         this.#wss.onmessage = (sender, msg) => this.#onmessage(sender, msg);
         this.#wss.onclose = (sender) => this.#onclose(sender);
-        server.onrequest = (method, params, query, body) => this.#onrequest(method, params, query, body);
     }
 
     #onmessage(sender, msg) {
@@ -34,28 +33,28 @@ export default class AdminService extends ServiceModule {
         this.#hostData.delete(name);
     }
 
-    async #onrequest(method, params, query/* , body */) {
-        const isAdmin = this.#isUserAdmin(query.token);
+    async onrequest(request/* , params */) {
+        const isAdmin = this.#isUserAdmin(request.query.token);
 
         if (!isAdmin) {
             return {status: 403};
         }
 
-        switch (method) {
+        switch (request.method) {
             case "GET": {
-                if (query.search) {
-                    return this.#getAccountNames(query.search);
+                if (request.query.search) {
+                    return this.#getAccountNames(request.query.search);
                 }
-                if (query.username) {
-                    return await this.#getAccountData(query.username);
+                if (request.query.username) {
+                    return await this.#getAccountData(request.query.username);
                 }
                 break;
             }
             case "PUT": {
-                return this.#registerAccount(query.name, query.email, query.pass);
+                return this.#registerAccount(request.query.name, request.query.email, request.query.pass);
             }
             case "DELETE": {
-                return this.#removeAccount(query.username, query.pass);
+                return this.#removeAccount(request.query.username, request.query.pass);
             }
             default: {
                 return {status: 400};

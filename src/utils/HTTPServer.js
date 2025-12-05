@@ -1,16 +1,15 @@
 import HTTP from "http";
-import {URL} from "url";
 import LoggableMixin from "../mixins/LoggableMixin.js";
 import WebSocketManager from "./manager/WebSocketManager.js";
 import ReceiverManager from "./manager/ReceiverManager.js";
 import LocalProxyManager from "./manager/LocalProxyManager.js";
 import RewriteRuleManager from "./manager/RewriteRuleManager.js";
-import { createOptionsHeader, createHeader } from "./helper/Header.js";
-import { resolveRequestBody } from "./helper/Request.js";
-
-const PATH_MATCHER_REGEXP = /^\/(?:(?:(?:[^{}/]+|\{[a-zA-Z0-9_]+\})\/)*(?:[^{}/]+|\{[a-zA-Z0-9_]+\}))?$/;
-const PATH_PARAM_REGEXP = /\{([a-zA-Z0-9_]+)\}/g;
-const PATH_PARAM_REPLACE = "(?<$1>[^/]+)";
+import {
+    createOptionsHeader, createHeader
+} from "./helper/Header.js";
+import Response from "../http/Response.js";
+import Request from "../http/Request.js";
+import SessionManager from "./manager/SessionManager.js";
 
 export default class HTTPServer extends LoggableMixin() {
 
@@ -20,6 +19,8 @@ export default class HTTPServer extends LoggableMixin() {
 
     #logRequests = false;
 
+    #useSessions = false;
+
     #webSocketManager = new WebSocketManager();
 
     #receiverManager = new ReceiverManager();
@@ -28,13 +29,17 @@ export default class HTTPServer extends LoggableMixin() {
 
     #localProxyManager = new LocalProxyManager();
 
-    constructor(port, enableCors = false, logRequests = false) {
+    constructor(port, options = {}) {
         super();
         const server = HTTP.createServer();
         server.listen(port);
+        const {
+            enableCors = false, logRequests = false, useSessions = false
+        } = options ?? {};
         this.#port = server.address().port;
-        this.#enableCors = enableCors;
-        this.#logRequests = logRequests;
+        this.#enableCors = !!enableCors;
+        this.#logRequests = !!logRequests;
+        this.#useSessions = !!useSessions;
         server.on("request", (request, response) => {
             this.#handleRequest(request, response);
         });
@@ -55,88 +60,79 @@ export default class HTTPServer extends LoggableMixin() {
         return super.logger;
     }
 
-    async #handleRequest(request, response) {
-        const location = new URL(request.url, "http://localhost");
-        const urlPath = location.pathname;
-        const originalPath = `/${urlPath.replace(/(^\/|\/$)/g, "")}`;
-        const method = request.method.toUpperCase();
+    async #handleRequest(serverRequest, serverResponse) {
+        const originalRequest = new Request(serverRequest);
+        const response = new Response(serverResponse);
+
+        let session;
+        // session handling
+        if (this.#useSessions) {
+            session = originalRequest.getSession();
+            if (session == null) {
+                session = SessionManager.createSession();
+            }
+            response.writeSession(session);
+        }
+
         try {
             if (this.#logRequests) {
                 this.logger.log("--- START REQUEST ---");
-                this.logger.log(`request path: ${originalPath}`);
+                this.logger.log(`request path: ${originalRequest.originalPath}`);
             }
-            const proxy = this.#localProxyManager.get(originalPath);
+            const proxy = this.#localProxyManager.get(originalRequest.originalPath);
             if (proxy != null) {
                 if (this.#logRequests) {
-                    this.logger.log(`pass request through proxy ${proxy.instanceName}: ${originalPath}`);
+                    this.logger.log(`pass request through proxy ${proxy.instanceName}: ${originalRequest.originalPath}`);
                 }
-                proxy.handleRequest(request, response, this.#enableCors);
+                proxy.handleRequest(serverRequest, serverResponse, this.#enableCors);
                 return;
             }
-            const rewrittenPath = this.#rewriteRuleManager.rewrite(originalPath);
-            if (method === "OPTIONS") {
-                if (this.#logRequests) {
-                    this.logger.log("requesting OPTIONS");
-                }
-                response.writeHead(204, createOptionsHeader(this.#enableCors));
-                response.end();
+            const rewrittenPath = this.#rewriteRuleManager.rewrite(originalRequest.originalPath);
+            const request = originalRequest.redirectInternal(rewrittenPath);
+            if (this.#logRequests) {
+                this.logger.log(`requesting ${request.method} => ${request.location.pathname}`);
+            }
+            if (request.method === "OPTIONS") {
+                response.setStatusCode(204)
+                    .setHeaders(createOptionsHeader(this.#enableCors))
+                    .writeHead()
+                    .send();
             } else {
-                const headers = request.headers;
-                const query = location.query;
+                const res = await this.#receiverManager.execute(request);
+                response.setStatusCode(res.status ?? 200)
+                    .setHeaders(createHeader(this.#enableCors, res.options));
+                if (res.content != null) {
+                    response.write(res.content)
+                        .send();
+                } else if (res.stream != null) {
+                    response.sendStream(res.stream);
+                } else if (res.json != null) {
+                    response.setHeader("Content-Type", "application/json; charset=utf-8")
+                        .write(JSON.stringify(res.json))
+                        .send();
+                }
                 if (this.#logRequests) {
-                    this.logger.log(`requesting ${method} => ${location.pathname}`);
-                }
-                // parse body
-                const body = await resolveRequestBody(request);
-                // parse cookies
-                const cookies = {};
-                if (headers.cookie != null) {
-                    headers.cookie.split(";").forEach(function(cookie) {
-                        const parts = cookie.split("=");
-                        cookies[parts.shift().trim()] = decodeURI(parts.join("="));
-                    });
-                }
-                // call the receiver that matches most specific
-                const res = await this.#receiverManager.execute(rewrittenPath, method, query, body, cookies);
-                if (res != null && res.status != null) {
-                    if (res.content != null) {
-                        response.writeHead(res.status, createHeader(this.#enableCors, res.options));
-                        response.end(res.content);
-                    } else if (res.stream != null) {
-                        response.writeHead(res.status, createHeader(this.#enableCors, res.options));
-                        res.stream.pipe(response);
-                    } else if (res.json != null) {
-                        response.writeHead(res.status, createHeader(this.#enableCors, {type: "application/json; charset=utf-8"}));
-                        response.end(JSON.stringify(res.json));
-                    } else {
-                        response.writeHead(res.status, createHeader(this.#enableCors, res.options));
-                        response.end();
-                    }
-                    if (this.#logRequests) {
-                        this.logger.log("--- END REQUEST ---");
-                        this.logger.log("");
-                    }
-                } else {
-                    throw new Error("response without status returned from service receiver");
+                    this.logger.log("--- END REQUEST ---");
+                    this.logger.log("");
                 }
             }
         } catch (err) {
-            this.logger.log(`ERROR during response => ${request.url}`);
+            this.logger.log(`ERROR during response => ${originalRequest.location.pathname}`);
             console.error(err);
-            response.writeHead(500, createHeader(this.#enableCors, {type: "application/json; charset=utf-8"}));
-            response.end(JSON.stringify({
-                url: request.url,
-                error: err
-            }));
+            response.setStatusCode(500)
+                .setHeaders(createHeader(this.#enableCors, {type: "application/json; charset=utf-8"}))
+                .write(JSON.stringify({
+                    url: originalRequest.url,
+                    error: err
+                }))
+                .send();
         }
     }
 
-    #handleUpgrade(request, socket, head) {
-        const location = URL.parse(request.url, true);
-        const urlPath = location.pathname;
-        const originalPath = `/${urlPath.replace(/(^\/|\/$)/g, "")}`;
+    #handleUpgrade(serverRequest, socket, head) {
+        const request = new Request(serverRequest);
+        const rewrittenPath = this.#rewriteRuleManager.rewrite(request.originalPath);
 
-        const rewrittenPath = this.#rewriteRuleManager.rewrite(originalPath);
         if (this.#logRequests) {
             this.logger.log(`requesting upgrade => ${rewrittenPath}`);
         }
@@ -144,7 +140,7 @@ export default class HTTPServer extends LoggableMixin() {
         if (wss == null) {
             socket.destroy();
         } else {
-            wss.handleUpgrade(request, socket, head);
+            wss.handleUpgrade(serverRequest, socket, head);
         }
     }
 
@@ -165,7 +161,7 @@ export default class HTTPServer extends LoggableMixin() {
     }
 
     addRewriteRule(rule) {
-        const res = this.#rewriteRuleManager.add(rule);
+        this.#rewriteRuleManager.add(rule);
     }
 
     registerLocalProxy(path, proxy) {

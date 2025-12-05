@@ -21,8 +21,7 @@ export default class WebService {
         if (typeof options !== "object" || Array.isArray(options)) {
             throw new Error("options has to be a dict or null");
         }
-        const {enableCors = false, logRequests = false} = options ?? {};
-        this.#server = new HTTP(getPort(port), !!enableCors, !!logRequests);
+        this.#server = new HTTP(getPort(port), options);
         this.#logger = new Logger(`WebService:${this.port.toString().padStart(5, "0")}`);
         this.#server.logger = this.#logger;
         this.#logger.log("start server");
@@ -42,9 +41,12 @@ export default class WebService {
         }
         endpoint = `/${endpoint.replace(/^\/|\/$/, "")}`;
         const wrapper = new ServiceWrapper(this.#server, endpoint);
-        const res = new Module(wrapper, options);
-        this.#logger.log(`registered service: ${res.instanceName} => "${endpoint}"`);
-        return res;
+        const module = new Module(wrapper, options);
+        if (typeof module.onrequest === "function") {
+            this.#server.addReceiver(endpoint, module);
+        }
+        this.#logger.log(`registered service: ${module.instanceName} => "${endpoint}"`);
+        return module;
     }
 
     registerLocalProxy(proxy, endpoint) {

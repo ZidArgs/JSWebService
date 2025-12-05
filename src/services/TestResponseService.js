@@ -8,11 +8,10 @@ export default class TestResponseService extends ServiceModule {
         super(server);
         this.#wss = server.getWebSocket();
         this.#wss.onmessage = (sender, msg) => this.#onmessage(sender, msg);
-        server.onrequest = (method, params, query) => this.#onrequest(method, params, query);
     }
 
-    async #onrequest(method, params, query) {
-        this.logger.log(`Recieving request: (${method}) ${JSON.stringify(params)} ${JSON.stringify(query)}`);
+    async onrequest(request, params) {
+        this.logger.log(`Recieving request: (${request.method}) ${JSON.stringify(params)} ${JSON.stringify(request.location.searchParams)}`);
         this.logger.log("Sending success");
         return {
             status: 200,

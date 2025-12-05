@@ -1,7 +1,5 @@
 import HTTP from "http";
-import {
-    EventEmitter
-} from "events";
+import {EventEmitter} from "events";
 import Logger from "./Logger.js";
 
 let INSTANCE_COUNTER = 0;
@@ -46,9 +44,7 @@ export default class LocalProxy extends EventEmitter {
                 this.logger.log(`recieving response from (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
             }
             clientResponse.writeHead(res.statusCode, res.headers);
-            res.pipe(clientResponse, {
-                end: true
-            });
+            res.pipe(clientResponse, {end: true});
         });
 
         proxy.on("error", (err) => {
@@ -63,9 +59,7 @@ export default class LocalProxy extends EventEmitter {
         if (this.#logRequests) {
             this.logger.log(`sending request to (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
         }
-        clientRequest.pipe(proxy, {
-            end: true
-        });
+        clientRequest.pipe(proxy, {end: true});
     }
 
     get instanceName() {

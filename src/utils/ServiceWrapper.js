@@ -21,14 +21,6 @@ export default class ServiceWrapper {
         return this.#socket;
     }
 
-    set onrequest(value) {
-        if (typeof value == "function") {
-            this.#server.addReceiver(this.#path, value);
-        } else {
-            this.#server.removeReceiver(this.#path);
-        }
-    }
-
     get port() {
         return this.#server.port;
     }

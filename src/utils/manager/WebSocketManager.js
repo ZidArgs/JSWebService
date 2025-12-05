@@ -1,5 +1,7 @@
 import LoggableMixin from "../../mixins/LoggableMixin.js";
-import { comparePathConfig, getPathData, PATH_MATCHER_REGEXP } from "../helper/UriPath.js";
+import {
+    comparePathConfig, getPathData, PATH_MATCHER_REGEXP
+} from "../helper/UriPath.js";
 
 export default class WebSocketManager extends LoggableMixin() {
 
@@ -18,18 +20,24 @@ export default class WebSocketManager extends LoggableMixin() {
             this.#orderedSockets.push(config);
             this.#orderedSockets.sort(comparePathConfig);
 
-            const {pathName: path, params, specifity} = config;
+            const {
+                pathName: path, params, specifity
+            } = config;
             this.logger.log(`add websocket: "${path}" {${params.join(",")}} [${specifity.join(",")}]`);
             this.logger.log("websocket order:");
             for (const config of this.#orderedSockets) {
-                const {pathName: path, params, specifity} = config;
+                const {
+                    pathName: path, params, specifity
+                } = config;
                 this.logger.log(`    "${path}" {${params.join(",")}} [${specifity.join(",")}]`);
             }
         } else {
             const config = this.#sockets.get(pathName);
             config.wss = wss;
-            
-            const {pathName: path, params, specifity} = config;
+
+            const {
+                pathName: path, params, specifity
+            } = config;
             this.logger.log(`replace websocket: "${path}" {${params.join(",")}} [${specifity.join(",")}]`);
         }
     }

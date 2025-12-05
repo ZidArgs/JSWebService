@@ -19,7 +19,6 @@ export default class AccountService extends ServiceModule {
         this.#wss = server.getWebSocket();
         this.#wss.onmessage = (sender, msg) => this.#onmessage(sender, msg);
         this.#wss.onclose = (sender) => this.#onclose(sender);
-        server.onrequest = (method, params, query, body) => this.#onrequest(method, params, query, body);
     }
 
     #onmessage(sender, msg) {
@@ -35,29 +34,29 @@ export default class AccountService extends ServiceModule {
         this.#hostData.delete(name);
     }
 
-    async #onrequest(method, params, query/* , body */) {
-        if (method == "POST") {
+    async onrequest(request, params) {
+        if (request.method == "POST") {
             switch (params[0]) {
                 case "login": {
-                    return await this.#login(query.username, query.pass);
+                    return await this.#login(request.query.username, request.query.pass);
                 }
                 case "logout": {
-                    return this.#logout(query.token);
+                    return this.#logout(request.query.token);
                 }
                 case "register": {
-                    return this.#registerAccount(query.username, query.email, query.pass);
+                    return this.#registerAccount(request.query.username, request.query.email, request.query.pass);
                 }
                 case "remove": {
-                    return this.#removeAccount(query.token, query.pass);
+                    return this.#removeAccount(request.query.token, request.query.pass);
                 }
             }
-        } else if (method == "GET") {
+        } else if (request.method == "GET") {
             switch (params[0]) {
                 case "user": {
-                    return await this.#getAccountData(query.token);
+                    return await this.#getAccountData(request.query.token);
                 }
                 case "api-token": {
-                    return await this.#generateApiToken(query.token);
+                    return await this.#generateApiToken(request.query.token);
                 }
             }
         }

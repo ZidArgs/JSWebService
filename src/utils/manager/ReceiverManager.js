@@ -1,5 +1,7 @@
 import LoggableMixin from "../../mixins/LoggableMixin.js";
-import { comparePathConfig, getPathData, PATH_MATCHER_REGEXP } from "../helper/UriPath.js";
+import {
+    comparePathConfig, getPathData, PATH_MATCHER_REGEXP
+} from "../helper/UriPath.js";
 
 export default class ReceiverManager extends LoggableMixin() {
 
@@ -22,18 +24,24 @@ export default class ReceiverManager extends LoggableMixin() {
             this.#orderedReceivers.push(config);
             this.#orderedReceivers.sort(comparePathConfig);
 
-            const {pathName: path, params, specifity} = config;
+            const {
+                pathName: path, params, specifity
+            } = config;
             this.logger.log(`add receiver: "${path}" {${params.join(",")}} [${specifity.join(",")}]`);
             this.logger.log("receiver order:");
             for (const config of this.#orderedReceivers) {
-                const {pathName: path, params, specifity} = config;
+                const {
+                    pathName: path, params, specifity
+                } = config;
                 this.logger.log(`    "${path}" {${params.join(",")}} [${specifity.join(",")}]`);
             }
         } else {
             const config = this.#receivers.get(pathName);
             config.receiver = receiver;
-            
-            const {pathName: path, params, specifity} = config;
+
+            const {
+                pathName: path, params, specifity
+            } = config;
             this.logger.log(`replace receiver: "${path}" {${params.join(",")}} [${specifity.join(",")}]`);
         }
     }
@@ -43,16 +51,16 @@ export default class ReceiverManager extends LoggableMixin() {
         this.#orderedReceivers.filter((entry) => entry.pathName !== pathName);
     }
 
-    async execute(pathName, method, query, body) {
+    async execute(request) {
         if (this.#receivers.size == 0) {
             this.logger.log("no receiver registered");
             return {status: 404};
         }
-        const [receiver, params] = this.get(pathName);
+        const [receiver, params] = this.get(request.internalPath);
         if (receiver != null) {
-            return await receiver(method, params, query, body);
+            return await receiver.onrequest(request, params);
         }
-        this.logger.log(`no matching receiver for path "${pathName}"`);
+        this.logger.log(`no matching receiver for path "${request.internalPath}"`);
         return {status: 404};
     }
 

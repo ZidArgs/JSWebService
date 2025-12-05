@@ -1,8 +1,6 @@
 import fs from "fs";
 import path from "path";
-import {
-    jsonReplacer
-} from "../utils/helper/JSON.js";
+import {jsonReplacer} from "../utils/helper/JSON.js";
 import ServiceModule from "../ServiceModule.js";
 
 const DEFAULT_INDEX_FILES = ["index.html", "index.htm"];
@@ -70,11 +68,10 @@ export default class StaticService extends ServiceModule {
                 });
             }
         }
-        server.onrequest = (method, params, query, body) => this.#onrequest(method, params, query, body);
     }
 
-    async #onrequest(method, params/* , query, body */) {
-        if (method == "GET") {
+    async onrequest(request, params) {
+        if (request.method == "GET") {
             const reqestPath = params["@restPath"];
             const internalRequestPath = this.#redirectPath(reqestPath);
             const filePath = path.resolve(this.#serveFolder, internalRequestPath);
@@ -101,7 +98,9 @@ export default class StaticService extends ServiceModule {
     }
 
     #redirectPath(reqestPath) {
-        for (const {matcher, exclude, rewrite, replace} of this.#rewrites) {
+        for (const {
+            matcher, exclude, rewrite, replace
+        } of this.#rewrites) {
             if (matcher instanceof RegExp && matcher.test(reqestPath)) {
                 if (exclude instanceof RegExp && !exclude.test(reqestPath)) {
                     if (replace) {
