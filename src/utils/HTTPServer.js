@@ -7,9 +7,8 @@ import RewriteRuleManager from "./manager/RewriteRuleManager.js";
 import {
     createOptionsHeader, createHeader
 } from "./helper/Header.js";
-import Response from "../http/Response.js";
 import Request from "../http/Request.js";
-import SessionManager from "./manager/SessionManager.js";
+import Response from "../http/Response.js";
 
 export default class HTTPServer extends LoggableMixin() {
 
@@ -61,55 +60,53 @@ export default class HTTPServer extends LoggableMixin() {
     }
 
     async #handleRequest(serverRequest, serverResponse) {
-        const originalRequest = new Request(serverRequest);
+        let request = new Request(serverRequest);
         const response = new Response(serverResponse);
-
-        let session;
-        // session handling
-        if (this.#useSessions) {
-            session = originalRequest.getSession();
-            if (session == null) {
-                session = SessionManager.createSession();
-            }
-            response.writeSession(session);
-        }
 
         try {
             if (this.#logRequests) {
                 this.logger.log("--- START REQUEST ---");
-                this.logger.log(`request path: ${originalRequest.originalPath}`);
+                this.logger.log(`request path: ${request.originalPath}`);
             }
-            const proxy = this.#localProxyManager.get(originalRequest.originalPath);
+            const proxy = this.#localProxyManager.get(request.originalPath);
             if (proxy != null) {
                 if (this.#logRequests) {
-                    this.logger.log(`pass request through proxy ${proxy.instanceName}: ${originalRequest.originalPath}`);
+                    this.logger.log(`pass request through proxy ${proxy.instanceName}: ${request.originalPath}`);
                 }
                 proxy.handleRequest(serverRequest, serverResponse, this.#enableCors);
                 return;
             }
-            const rewrittenPath = this.#rewriteRuleManager.rewrite(originalRequest.originalPath);
-            const request = originalRequest.redirectInternal(rewrittenPath);
+            const rewrittenPath = this.#rewriteRuleManager.rewrite(request.originalPath);
+            request = request.redirectInternal(rewrittenPath);
             if (this.#logRequests) {
                 this.logger.log(`requesting ${request.method} => ${request.location.pathname}`);
             }
             if (request.method === "OPTIONS") {
+                this.#maybeWriteSession(request, response);
                 response.setStatusCode(204)
                     .setHeaders(createOptionsHeader(this.#enableCors))
-                    .writeHead()
                     .send();
             } else {
                 const res = await this.#receiverManager.execute(request);
+                this.#maybeWriteSession(request, response);
                 response.setStatusCode(res.status ?? 200)
                     .setHeaders(createHeader(this.#enableCors, res.options));
                 if (res.content != null) {
-                    response.write(res.content)
-                        .send();
+                    if (this.#logRequests) {
+                        this.logger.log("responding with plaintext");
+                    }
+                    response.send(res.content);
                 } else if (res.stream != null) {
-                    response.sendStream(res.stream);
+                    if (this.#logRequests) {
+                        this.logger.log("responding with a stream");
+                    }
+                    response.send(res.stream);
                 } else if (res.json != null) {
+                    if (this.#logRequests) {
+                        this.logger.log("responding with json");
+                    }
                     response.setHeader("Content-Type", "application/json; charset=utf-8")
-                        .write(JSON.stringify(res.json))
-                        .send();
+                        .send(JSON.stringify(res.json));
                 }
                 if (this.#logRequests) {
                     this.logger.log("--- END REQUEST ---");
@@ -117,15 +114,14 @@ export default class HTTPServer extends LoggableMixin() {
                 }
             }
         } catch (err) {
-            this.logger.log(`ERROR during response => ${originalRequest.location.pathname}`);
+            this.logger.log(`ERROR during response => ${request.location.pathname}`);
             console.error(err);
             response.setStatusCode(500)
                 .setHeaders(createHeader(this.#enableCors, {type: "application/json; charset=utf-8"}))
-                .write(JSON.stringify({
-                    url: originalRequest.url,
+                .send(JSON.stringify({
+                    url: request.url,
                     error: err
-                }))
-                .send();
+                }));
         }
     }
 
@@ -174,6 +170,15 @@ export default class HTTPServer extends LoggableMixin() {
 
     get port() {
         return this.#port;
+    }
+
+    #maybeWriteSession(request, response) {
+        if (this.#useSessions) {
+            const session = request.session;
+            if (request.isNewSession) { // TODO add option for session refresh
+                response.writeSession(session);
+            }
+        }
     }
 
 }

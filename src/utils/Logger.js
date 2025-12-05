@@ -34,6 +34,11 @@ export default class Logger {
         console.log(`[${timestamp}] ${this.#tag.padEnd(longestTagSize)} :: ${message}`, ...params);
     }
 
+    error(message, ...params) {
+        const timestamp = formatDate(new Date());
+        console.error(`[${timestamp}] ${this.#tag.padEnd(longestTagSize)} :: ${message}`, ...params);
+    }
+
     derive(tag) {
         if (typeof tag !== "string" || tag === "") {
             throw new Error("\"tag\" must be a non empty string");

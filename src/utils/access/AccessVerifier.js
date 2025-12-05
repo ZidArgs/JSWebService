@@ -12,6 +12,7 @@ export default class AccessVerifier extends LoggableMixin() {
     #credentialsManagerList = new Set();
 
     constructor() {
+        super();
         this.#index = INSTANCE_COUNTER++;
         this.logger.log(`access verifier created (${this.constructor.name})`);
     }

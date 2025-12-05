@@ -9,7 +9,9 @@ export default class RewriteRuleManager extends LoggableMixin() {
             throw new TypeError("dict expected");
         }
 
-        const {conditions, matcher, rewrite} = rule;
+        const {
+            conditions, matcher, rewrite
+        } = rule;
 
         if (!(matcher instanceof RegExp || typeof matcher === "string") || matcher === "") {
             throw new Error("mandatory property \"matcher\" must be a RegExp or a non empty string");
@@ -54,7 +56,9 @@ export default class RewriteRuleManager extends LoggableMixin() {
 
     rewrite(pathName) {
         for (const rule of this.#rewriteRules) {
-            const {conditions, matcher, rewrite} = rule;
+            const {
+                conditions, matcher, rewrite
+            } = rule;
             this.logger.log(`testing rewrite: [${conditions.join(",")}] ${matcher} => "${rewrite}"`);
             if (this.#matchesRuleConditions(conditions, pathName)) {
                 const result = pathName.replace(matcher, rewrite);

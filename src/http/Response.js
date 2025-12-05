@@ -1,13 +1,17 @@
 import http from "http";
+import {Readable} from "stream";
 import {
+    isArrayOf,
     isDict,
     isNull,
-    isNumberNotNaN, isStringNotEmpty
+    isNumberNotNaN, isString, isStringNotEmpty
 } from "../utils/helper/CheckType.js";
 import SameSiteValueEnum from "./enum/SameSiteValueEnum.js";
 import {SESSION_COOKIE_NAME} from "./consts.js";
 
-const DEFAULT_HEADERS = {"Content-Type": "text/plain; charset=utf-8"};
+const DEFAULT_HEADERS = [
+    ["content-type", "text/plain; charset=utf-8"]
+];
 
 function compileCookie(name, value, options = {}) {
     const res = [`${name}=${encodeURIComponent(value)}`];
@@ -43,21 +47,35 @@ function compileCookie(name, value, options = {}) {
 
 export default class Response {
 
-    #isSend = false;
+    #isFinished = false;
 
     #response;
 
+    #allowsCookies = false;
+
     #statusCode = 200;
 
-    #headers = {...DEFAULT_HEADERS};
+    #headers = new Map(DEFAULT_HEADERS);
+
+    #cookies = new Map();
 
     #body = [];
 
-    constructor(response) {
+    constructor(response, options = {}) {
         if (!(response instanceof http.ServerResponse)) {
             throw new TypeError("response must be a ServerResponse");
         }
         this.#response = response;
+        const {allowsCookies = false} = options;
+        this.#allowsCookies = allowsCookies;
+    }
+
+    isFinished() {
+        return this.#isFinished;
+    }
+
+    get allowsCookies() {
+        return this.#allowsCookies;
     }
 
     set statusCode(value) {
@@ -86,7 +104,20 @@ export default class Response {
     }
 
     setHeader(name, value) {
-        this.#headers[name] = value;
+        if (!isStringNotEmpty(name)) {
+            throw new TypeError("header name must be a non empty string");
+        }
+        if (!isNumberNotNaN(value) && !isString(value) && isArrayOf(value, isString)) {
+            throw new TypeError("header value must either a number, a string or an array of strings");
+        }
+        name = name.toLowerCase();
+        if (name !== "set-cookie") {
+            if (!this.#response.headersSent) {
+                this.#headers.set(name, value);
+            } else {
+                console.error(`trying to write header after sending response [${name}: ${value}]`);
+            }
+        }
         return this;
     }
 
@@ -96,19 +127,16 @@ export default class Response {
         }
         for (const name in headers) {
             const value = headers[name];
-            this.#headers[name] = value;
+            this.setHeader(name, value);
         }
         return this;
     }
 
     setCookie(name, value, options = {}) {
-        let cookieList = this.#response.getHeader("set-cookie") ?? [];
-        if (!Array.isArray(cookieList)) {
-            cookieList = [cookieList];
+        if (this.#allowsCookies && name !== SESSION_COOKIE_NAME) {
+            const cookie = compileCookie(name, value, options);
+            this.#cookies.set(name, cookie);
         }
-        const cookie = compileCookie(name, value, options);
-        cookieList.push(cookie);
-        this.#headers["Set-Cookie"] = cookieList;
         return this;
     }
 
@@ -126,28 +154,69 @@ export default class Response {
         return this;
     }
 
-    sendStream(stream) {
-        if (this.#isSend) {
-            throw new Error("response has already been send");
+    send(content, encoding) {
+        if (this.#isFinished) {
+            throw new Error("response has already ended");
         }
-        this.#isSend = true;
-        this.#response.writeHead(this.#statusCode, this.#headers);
-        for (const [chunk, encoding] of this.#body) {
-            this.#response.write(chunk, encoding);
+        this.#writeHeaders();
+        if (content != null) {
+            if (content instanceof Readable) {
+                this.#streamBody(false);
+                this.#pipeStream(content);
+                return;
+            }
+            this.#body.push([content, encoding]);
         }
-        stream.pipe(this.#response);
+        this.#streamBody();
     }
 
-    send() {
-        if (this.#isSend) {
-            throw new Error("response has already been send");
+    getCompiledHeaders() {
+        const headerList = {};
+        for (const [name, value] of this.#headers) {
+            headerList[name] = value;
         }
-        this.#isSend = true;
-        this.#response.writeHead(this.#statusCode, this.#headers);
-        for (const [chunk, encoding] of this.#body) {
-            this.#response.write(chunk, encoding);
+        if (this.#allowsCookies) {
+            headerList["set-cookie"] = this.#cookies.values();
         }
-        this.#response.end();
+        return headerList;
+    }
+
+    #writeHeaders() {
+        if (!this.#response.headersSent) {
+            this.#response.writeHead(this.#statusCode, this.getCompiledHeaders());
+        }
+    }
+
+    #streamBody(end = true) {
+        if (this.#body.length > 0) {
+            const charStream = this.#getStreamFromBody();
+            this.#pipeStream(charStream);
+        } else if (end) {
+            this.#isFinished = true;
+            this.#response.end();
+        }
+    }
+
+    #getStreamFromBody() {
+        const charStream = Readable.from("");
+        if (this.#body.length > 0) {
+            for (const [chunk, encoding] of this.#body) {
+                charStream.push(chunk, encoding);
+            }
+            this.#body = [];
+        }
+        return charStream;
+    }
+
+    #pipeStream(stream, end = true) {
+        try {
+            this.#isFinished |= end;
+            stream.pipe(this.#response, {end});
+        } catch (err) {
+            this.#isFinished = true;
+            console.error("An error occurred:", err);
+            this.#response.end();
+        }
     }
 
 }

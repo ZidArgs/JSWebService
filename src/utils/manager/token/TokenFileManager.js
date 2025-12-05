@@ -1,8 +1,6 @@
 import fs from "fs";
 import path from "path";
-import {
-    createSecureURLToken
-} from "../../helper/Crypto.js";
+import {createSecureURLToken} from "../../helper/Crypto.js";
 import AbstractTokenManager from "./AbstractTokenManager.js";
 
 const DEFAULT_TOKEN_FILE_PATH = "./token";

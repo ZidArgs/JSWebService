@@ -10,6 +10,7 @@ export default class AbstractCredentials extends LoggableMixin() {
         if (new.target === AbstractCredentials) {
             throw new Error("can not construct abstract class");
         }
+        super();
         this.#index = INSTANCE_COUNTER++;
         this.logger.log(`credentials created (${this.constructor.name})`);
     }

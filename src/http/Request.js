@@ -2,7 +2,9 @@ import http from "http";
 import ReadonlyURL from "./ReadonlyURL.js";
 import {resolveRequestBody} from "../utils/helper/Request.js";
 import SessionManager from "../utils/manager/SessionManager.js";
-import {SESSION_COOKIE_NAME} from "./consts.js";
+import {
+    ALLOW_COOKIES_NAME, SESSION_COOKIE_NAME
+} from "./consts.js";
 
 function decompileCookie(cookie) {
     const [name, value] = cookie.split("=");
@@ -17,6 +19,12 @@ const PRIVATE_CONSTRUCTOR_KEY = Symbol();
 export default class Request {
 
     #request;
+
+    #session;
+
+    #isNewSession = false;
+
+    #allowsCookies;
 
     #method;
 
@@ -72,6 +80,32 @@ export default class Request {
         }
     }
 
+    get session() {
+        if (this.#session == null) {
+            const sessionId = this.getCookie(SESSION_COOKIE_NAME);
+            if (sessionId != null) {
+                this.#session = SessionManager.get(sessionId);
+            }
+            if (this.#session == null) {
+                this.#isNewSession = true;
+                this.#session = SessionManager.createSession();
+            }
+        }
+        return this.#session;
+    }
+
+    get isNewSession() {
+        return this.#isNewSession;
+    }
+
+    get allowsCookies() {
+        if (this.#allowsCookies == null) {
+            const allows = this.getCookie(ALLOW_COOKIES_NAME);
+            this.#allowsCookies = allows === true || allows === "true" || allows === 1;
+        }
+        return this.#allowsCookies;
+    }
+
     get method() {
         return this.#method;
     }
@@ -90,6 +124,10 @@ export default class Request {
 
     get internalPath() {
         return this.#internalPath;
+    }
+
+    get url() {
+        return this.#request.url;
     }
 
     async resolveBody() {
@@ -115,6 +153,9 @@ export default class Request {
     redirectInternal(internalPath) {
         const newRequest = new Request(PRIVATE_CONSTRUCTOR_KEY);
         newRequest.#request = this.#request;
+        newRequest.#session = this.#session;
+        newRequest.#isNewSession = this.#isNewSession;
+        newRequest.#allowsCookies = this.#allowsCookies;
         newRequest.#method = this.#method;
         newRequest.#location = this.#location;
         newRequest.#originalPath = this.#originalPath;

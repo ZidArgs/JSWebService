@@ -1,6 +1,7 @@
 import HTTP from "http";
 import {EventEmitter} from "events";
 import Logger from "./Logger.js";
+import Response from "../http/Response.js";
 
 let INSTANCE_COUNTER = 0;
 
@@ -31,6 +32,8 @@ export default class LocalProxy extends EventEmitter {
     }
 
     handleRequest(clientRequest, clientResponse, enableCors = false) {
+        const response = new Response(clientResponse);
+
         const options = {
             hostname: this.#hostname,
             port: this.#port,
@@ -41,23 +44,27 @@ export default class LocalProxy extends EventEmitter {
 
         const proxy = HTTP.request(options, (res) => {
             if (this.#logRequests) {
-                this.logger.log(`recieving response from (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
+                this.#logger.log(`recieving response from (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
             }
-            clientResponse.writeHead(res.statusCode, res.headers);
-            res.pipe(clientResponse, {end: true});
+            response.setStatusCode(res.statusCode)
+                .setHeaders(res.headers)
+                .send(res);
         });
 
         proxy.on("error", (err) => {
-            this.logger.error(`error handling request at (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
-            clientResponse.writeHead(500, this.#getHeader(enableCors));
-            clientResponse.end(JSON.stringify({
-                url: clientRequest.url,
-                error: `Error handling Proxy: ${err.code}`
-            }));
+            this.#logger.error(`error handling request at (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
+            if (!response.isFinished()) {
+                response.setStatusCode(500)
+                    .setHeaders(this.#getHeader(enableCors))
+                    .send(JSON.stringify({
+                        url: clientRequest.url,
+                        error: `Error handling Proxy: ${err.code}`
+                    }));
+            }
         });
 
         if (this.#logRequests) {
-            this.logger.log(`sending request to (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
+            this.#logger.log(`sending request to (${clientRequest.method}) http://${this.#hostname}:${this.#port}${clientRequest.url}`);
         }
         clientRequest.pipe(proxy, {end: true});
     }

@@ -1,4 +1,5 @@
 export const PATH_MATCHER_REGEXP = /^\/(?:(?:(?:[^{}/]+|\{[a-zA-Z0-9_]+\})\/)*(?:[^{}/]+|\{[a-zA-Z0-9_]+\}))?$/;
+
 export const PATH_PARAM_REGEXP = /\{([a-zA-Z0-9_]+)\}/g;
 
 export function getPathData(pathName) {

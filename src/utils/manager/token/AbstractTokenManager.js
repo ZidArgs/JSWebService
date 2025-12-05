@@ -10,6 +10,7 @@ export default class AbstractTokenManager extends LoggableMixin() {
         if (new.target === AbstractTokenManager) {
             throw new Error("can not construct abstract class");
         }
+        super();
         this.#index = INSTANCE_COUNTER++;
         this.logger.log(`token manager created (${this.constructor.name})`);
     }

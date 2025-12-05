@@ -4,7 +4,7 @@ import LocalProxy from "../LocalProxy.js";
 export default class LocalProxyManager extends LoggableMixin() {
 
     #localProxies = new Map();
-    
+
     set(pathName, proxy) {
         if (!(proxy instanceof LocalProxy)) {
             throw new TypeError("proxy has to be an instance of Proxy");

@@ -7,12 +7,18 @@ const enableCors = process.argv.indexOf("-cors") >= 1;
 const port = process.argv.indexOf("-port") >= 1 ? process.argv[process.argv.indexOf("-port") + 1] : "12345";
 
 // remote service
-const remoteService = new WebService("12346", {useSessions: true});
+const remoteService = new WebService("12346", {
+    useSessions: true,
+    logRequests: true
+});
 remoteService.registerServiceModule(StaticService, "", {serveFolder: "./webtest"});
 remoteService.registerServiceModule(TestResponseService, "project/{project}");
 
 // public service
-const service = new WebService(port, {enableCors});
+const service = new WebService(port, {
+    enableCors,
+    logRequests: true
+});
 const localProxy = new LocalProxy("12346");
 service.registerLocalProxy(localProxy, "");
 service.addRewriteRule({
