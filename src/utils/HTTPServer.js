@@ -10,6 +10,7 @@ import {
 import Request from "../http/Request.js";
 import Response from "../http/Response.js";
 
+// TODO add ErrorCodeManager to handle specific error codes
 export default class HTTPServer extends LoggableMixin() {
 
     #port;
@@ -89,6 +90,7 @@ export default class HTTPServer extends LoggableMixin() {
             } else {
                 const res = await this.#receiverManager.execute(request);
                 this.#maybeWriteSession(request, response);
+                // TODO use error code handler if registered into ErrorCodeManager
                 response.setStatusCode(res.status ?? 200)
                     .setHeaders(createHeader(this.#enableCors, res.options));
                 if (res.content != null) {
@@ -107,6 +109,11 @@ export default class HTTPServer extends LoggableMixin() {
                     }
                     response.setHeader("Content-Type", "application/json; charset=utf-8")
                         .send(JSON.stringify(res.json));
+                } else {
+                    if (this.#logRequests) {
+                        this.logger.log("empty response");
+                    }
+                    response.send();
                 }
                 if (this.#logRequests) {
                     this.logger.log("--- END REQUEST ---");
@@ -116,6 +123,7 @@ export default class HTTPServer extends LoggableMixin() {
         } catch (err) {
             this.logger.log(`ERROR during response => ${request.location.pathname}`);
             console.error(err);
+            // TODO use error code handler if registered into ErrorCodeManager
             response.setStatusCode(500)
                 .setHeaders(createHeader(this.#enableCors, {type: "application/json; charset=utf-8"}))
                 .send(JSON.stringify({
