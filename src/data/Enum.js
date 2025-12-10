@@ -29,7 +29,7 @@ export default class Enum {
         return this.asArray().includes(value.toString());
     }
 
-    static includesCaseInsensitive(value) {
+    static includesI(value) {
         return this.asArray().map((e) => e.toLowerCase()).includes(value.toString().toLowerCase());
     }
 
