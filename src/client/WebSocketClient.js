@@ -1,16 +1,21 @@
+import EventTargetManager from "../utils/event/EventTargetManager.js";
 import MessageBuffer from "./MessageBuffer.js";
 
 const EMPTY_FN = function() {};
 
+export function httpToWsUrl(url) {
+    const result = new URL(url);
+    result.protocol = result.protocol.replace("http", "ws");
+    return result;
+}
+
 export default class WebSocketClient extends EventTarget {
 
-    #messageBuffer = new MessageBuffer();
-
-    #serviceURL;
+    #wsUrl;
 
     #socket;
 
-    #socketID;
+    #socketId;
 
     #timeout;
 
@@ -18,10 +23,31 @@ export default class WebSocketClient extends EventTarget {
 
     #onmessage = EMPTY_FN;
 
+    #messageBuffer = new MessageBuffer();
+
+    #websocketEventManager = new EventTargetManager();
+
     constructor(url) {
         super();
-        this.#serviceURL = new URL(url);
-        this.#serviceURL.protocol = this.#serviceURL.protocol.replace("http", "ws");
+        this.#wsUrl = httpToWsUrl(url);
+        /* --- */
+        this.#websocketEventManager.set("open", () => {
+            this.#onsocketopen();
+        });
+        this.#websocketEventManager.set("close", () => {
+            this.#onsocketclose();
+        });
+        this.#websocketEventManager.set("message", (event) => {
+            const msg = JSON.parse(event.data);
+            switch (msg.type) {
+                case "ping":
+                    this.#onsocketping(msg);
+                    break;
+                case "data":
+                    this.#onsocketmessage(msg.data);
+                    break;
+            }
+        });
     }
 
     #setNextTimeout() {
@@ -44,7 +70,7 @@ export default class WebSocketClient extends EventTarget {
         clearTimeout(this.#timeout);
         this.#timeout = undefined;
         this.#socket = undefined;
-        this.#socketID = undefined;
+        this.#socketId = undefined;
     }
 
     #onsocketping(msg) {
@@ -54,6 +80,7 @@ export default class WebSocketClient extends EventTarget {
     }
 
     #onsocketmessage(data) {
+        this.#setNextTimeout();
         const event = new Event("message");
         event.data = data;
         this.#onmessage(event);
@@ -61,7 +88,7 @@ export default class WebSocketClient extends EventTarget {
     }
 
     get id() {
-        return this.#socketID;
+        return this.#socketId;
     }
 
     set maxTime(value) {
@@ -80,35 +107,24 @@ export default class WebSocketClient extends EventTarget {
         return !!this.#socket && this.#socket.readyState == WebSocket.OPEN;
     }
 
-    open() {
-        return new Promise((resolve, reject) => {
-            if (!this.#socket) {
+    async open() {
+        if (this.#socket == null) {
+            await new Promise((resolve, reject) => {
                 try {
-                    this.#socket = new WebSocket(this.#serviceURL);
-                    this.#socket.addEventListener("open", (event) => this.#onsocketopen(event));
-                    this.#socket.addEventListener("close", (event) => this.#onsocketclose(event));
+                    this.#socket = new WebSocket(this.#wsUrl);
+                    this.#websocketEventManager.switchTarget(this.#socket);
                     this.#socket.addEventListener("message", (event) => {
                         const msg = JSON.parse(event.data);
-                        switch (msg.type) {
-                            case "ping":
-                                this.#onsocketping(msg);
-                                break;
-                            case "uuid":
-                                this.#socketID = msg.data;
-                                resolve();
-                                break;
-                            case "data":
-                                this.#onsocketmessage(msg.data);
-                                break;
+                        if (msg.type === "uuid") {
+                            this.#socketId = msg.data;
+                            resolve();
                         }
-                    });
+                    }, {once: true});
                 } catch (e) {
                     reject(e);
                 }
-            } else {
-                resolve();
-            }
-        });
+            });
+        }
     }
 
     close() {
@@ -117,7 +133,7 @@ export default class WebSocketClient extends EventTarget {
                 try {
                     this.#socket.addEventListener("close", () => {
                         resolve();
-                    });
+                    }, {once: true});
                     this.#socket.close();
                 } catch (e) {
                     reject(e);
