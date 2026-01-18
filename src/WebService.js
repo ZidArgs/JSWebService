@@ -27,6 +27,10 @@ export default class WebService {
         this.#logger.log("start server");
     }
 
+    get basePath() {
+        return this.#server.basePath;
+    }
+
     get port() {
         return this.#server.port;
     }
@@ -53,6 +57,27 @@ export default class WebService {
         endpoint = `/${endpoint.replace(/^\/|\/$/, "")}`;
         this.#server.registerLocalProxy(endpoint, proxy);
         this.#logger.log(`registered proxy: ${proxy.instanceName} => "${endpoint}"`);
+    }
+
+    printServerInfoPanel() {
+        const port = this.#server.port.toString();
+        const path = this.#server.basePath.toString();
+
+        const urlString = `http://localhost:${port}${path}`;
+        const urlLength = urlString.length;
+        const spaceString = " ".repeat(urlLength);
+        const outerString = "═".repeat(urlLength);
+        const innerString = "─".repeat(urlLength);
+
+        console.log(``);
+        console.log(`╔═════════${outerString}═════════╗`);
+        console.log(`║ ┌╦┐ ╭───${innerString}───╮ ┌╦┐ ║`);
+        console.log(`║  │  │   ${spaceString}   │  │  ║`);
+        console.log(`╠─═╬═─╡   ${urlString  }   ╞─═╬═─╣`);
+        console.log(`║  │  │   ${spaceString}   │  │  ║`);
+        console.log(`║ └╩┘ ╰───${innerString}───╯ └╩┘ ║`);
+        console.log(`╚═════════${outerString}═════════╝`);
+        console.log(``);
     }
 
 }

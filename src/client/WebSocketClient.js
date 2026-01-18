@@ -1,5 +1,6 @@
+import ConnectionError from "./error/ConnectionError.js";
+import MessageBuffer from "./utils/MessageBuffer.js";
 import EventTargetManager from "../utils/event/EventTargetManager.js";
-import MessageBuffer from "./MessageBuffer.js";
 
 const EMPTY_FN = function() {};
 
@@ -34,7 +35,7 @@ export default class WebSocketClient extends EventTarget {
         this.#websocketEventManager.set("open", () => {
             this.#onsocketopen();
         });
-        this.#websocketEventManager.set("close", () => {
+        this.#websocketEventManager.set(["close", "error"], () => {
             this.#onsocketclose();
         });
         this.#websocketEventManager.set("message", (event) => {
@@ -67,10 +68,8 @@ export default class WebSocketClient extends EventTarget {
     }
 
     #onsocketclose(/* event */) {
-        clearTimeout(this.#timeout);
-        this.#timeout = undefined;
-        this.#socket = undefined;
-        this.#socketId = undefined;
+        this.#cleanup();
+        this.dispatchEvent(new Event("closed"));
     }
 
     #onsocketping(msg) {
@@ -85,6 +84,14 @@ export default class WebSocketClient extends EventTarget {
         event.data = data;
         this.#onmessage(event);
         this.dispatchEvent(event);
+    }
+
+    #cleanup() {
+        clearTimeout(this.#timeout);
+        this.#timeout = null;
+        this.#socket = null;
+        this.#socketId = null;
+        this.#websocketEventManager.disconnect();
     }
 
     get id() {
@@ -112,15 +119,32 @@ export default class WebSocketClient extends EventTarget {
             await new Promise((resolve, reject) => {
                 try {
                     this.#socket = new WebSocket(this.#wsUrl);
-                    this.#websocketEventManager.switchTarget(this.#socket);
-                    this.#socket.addEventListener("message", (event) => {
+                    const eventManager = new EventTargetManager(this.#socket);
+                    eventManager.set("open", () => {
+                        this.#websocketEventManager.switchTarget(this.#socket);
+                    });
+                    eventManager.set("error", () => {
+                        const readyState = this.#socket.readyState;
+                        eventManager.clear();
+                        eventManager.disconnect();
+                        this.#cleanup();
+                        if (readyState  === WebSocket.CLOSED) {
+                            reject(new ConnectionError("Error connecting WebSocket"));
+                        } else {
+                            reject(new ConnectionError("Unexpected error"));
+                        }
+                    });
+                    eventManager.set("message", (event) => {
+                        eventManager.clear();
+                        eventManager.disconnect();
                         const msg = JSON.parse(event.data);
                         if (msg.type === "uuid") {
                             this.#socketId = msg.data;
                             resolve();
                         }
-                    }, {once: true});
+                    });
                 } catch (e) {
+                    this.#socket = null;
                     reject(e);
                 }
             });
@@ -135,6 +159,7 @@ export default class WebSocketClient extends EventTarget {
                         resolve();
                     }, {once: true});
                     this.#socket.close();
+                    this.#onsocketclose();
                 } catch (e) {
                     reject(e);
                 }

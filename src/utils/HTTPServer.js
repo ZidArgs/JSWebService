@@ -7,11 +7,14 @@ import RewriteRuleManager from "./manager/RewriteRuleManager.js";
 import {
     createOptionsHeader, createHeader
 } from "./helper/Header.js";
+import {cleanupPathName} from "./helper/UriPath.js";
 import Request from "../http/Request.js";
 import Response from "../http/Response.js";
 
 // TODO add ErrorCodeManager to handle specific error codes
 export default class HTTPServer extends LoggableMixin() {
+
+    #basePath = "/";
 
     #port;
 
@@ -34,12 +37,15 @@ export default class HTTPServer extends LoggableMixin() {
         const server = HTTP.createServer();
         server.listen(port);
         const {
-            enableCors = false, logRequests = false, useSessions = false
+            enableCors = false, logRequests = false, useSessions = false, basePath
         } = options ?? {};
         this.#port = server.address().port;
         this.#enableCors = !!enableCors;
         this.#logRequests = !!logRequests;
         this.#useSessions = !!useSessions;
+        if (typeof basePath === "string" && basePath !== "") {
+            this.#basePath = `/${cleanupPathName(basePath)}/`;
+        }
         server.on("request", (request, response) => {
             this.#handleRequest(request, response);
         });
@@ -64,20 +70,31 @@ export default class HTTPServer extends LoggableMixin() {
         let request = new Request(serverRequest);
         const response = new Response(serverResponse);
 
+        const originalPath = request.originalPath;
+        if (!originalPath.startsWith(this.#basePath)) {
+            console.log(`"${originalPath}" does not match basePath "${this.#basePath}"`);
+            response.setStatusCode(404)
+                .setHeaders(createHeader(this.#enableCors))
+                .send();
+            return;
+        }
+
+        const requestPath = originalPath.replace(this.#basePath, "/");
+
         try {
             if (this.#logRequests) {
                 this.logger.log("--- START REQUEST ---");
-                this.logger.log(`request path: ${request.originalPath}`);
+                this.logger.log(`request path: ${requestPath}`);
             }
-            const proxy = this.#localProxyManager.get(request.originalPath);
+            const proxy = this.#localProxyManager.get(requestPath);
             if (proxy != null) {
                 if (this.#logRequests) {
-                    this.logger.log(`pass request through proxy ${proxy.instanceName}: ${request.originalPath}`);
+                    this.logger.log(`pass request through proxy ${proxy.instanceName}: ${requestPath}`);
                 }
                 proxy.handleRequest(serverRequest, serverResponse, this.#enableCors);
                 return;
             }
-            const rewrittenPath = this.#rewriteRuleManager.rewrite(request.originalPath);
+            const rewrittenPath = this.#rewriteRuleManager.rewrite(requestPath);
             request = request.redirectInternal(rewrittenPath);
             if (this.#logRequests) {
                 this.logger.log(`requesting ${request.method} => ${request.location.pathname}`);
@@ -135,7 +152,17 @@ export default class HTTPServer extends LoggableMixin() {
 
     #handleUpgrade(serverRequest, socket, head) {
         const request = new Request(serverRequest);
-        const rewrittenPath = this.#rewriteRuleManager.rewrite(request.originalPath);
+
+        const originalPath = request.originalPath;
+        if (!originalPath.startsWith(this.#basePath)) {
+            console.log(`"${originalPath}" does not match basePath "${this.#basePath}"`);
+            socket.destroy();
+            return;
+        }
+
+        const requestPath = originalPath.replace(this.#basePath, "/");
+
+        const rewrittenPath = this.#rewriteRuleManager.rewrite(requestPath);
 
         if (this.#logRequests) {
             this.logger.log(`requesting upgrade => ${rewrittenPath}`);
@@ -174,6 +201,10 @@ export default class HTTPServer extends LoggableMixin() {
 
     removeLocalProxy(path) {
         this.#localProxyManager.delete(path);
+    }
+
+    get basePath() {
+        return this.#basePath;
     }
 
     get port() {

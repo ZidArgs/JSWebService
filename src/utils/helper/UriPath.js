@@ -2,12 +2,16 @@ export const PATH_MATCHER_REGEXP = /^\/(?:(?:(?:[^{}/]+|\{[a-zA-Z0-9_]+\})\/)*(?
 
 export const PATH_PARAM_REGEXP = /\{([a-zA-Z0-9_]+)\}/g;
 
+export  function cleanupPathName(pathName) {
+    return pathName.replace(/(^\/|\/$)/g, "").replace(/\\/g, "\\\\").replace(/\./g, "\\.");
+}
+
 export function getPathData(pathName) {
     if (!PATH_MATCHER_REGEXP.test(pathName)) {
         throw new Error(`"${pathName}" does not match pattern`);
     }
 
-    const path = pathName.replace(/(^\/|\/$)/g, "").replace(/\\/g, "\\\\").replace(/\./g, "\\.").split("/");
+    const path = cleanupPathName(pathName).split("/");
 
     const result = {
         pathName,
