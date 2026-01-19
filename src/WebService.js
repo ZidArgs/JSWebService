@@ -2,6 +2,7 @@ import HTTP from "./utils/HTTPServer.js";
 import ServiceWrapper from "./utils/ServiceWrapper.js";
 import ServiceModule from "./ServiceModule.js";
 import Logger from "./utils/Logger.js";
+import {trimPathName} from "./utils/helper/UriPath.js";
 
 function getPort(value) {
     const port = parseInt(value);
@@ -43,7 +44,8 @@ export default class WebService {
         if (!(Module.prototype instanceof ServiceModule)) {
             throw new Error("Error registering service: Only children of ServiceModule can be registered");
         }
-        endpoint = `/${endpoint.replace(/^\/|\/$/, "")}`;
+        endpoint = trimPathName(endpoint);
+        endpoint = `/${endpoint}`;
         const wrapper = new ServiceWrapper(this.#server, endpoint);
         const module = new Module(wrapper, options);
         if (typeof module.onrequest === "function") {
@@ -54,7 +56,8 @@ export default class WebService {
     }
 
     registerLocalProxy(proxy, endpoint) {
-        endpoint = `/${endpoint.replace(/^\/|\/$/, "")}`;
+        endpoint = trimPathName(endpoint);
+        endpoint = `/${endpoint}`;
         this.#server.registerLocalProxy(endpoint, proxy);
         this.#logger.log(`registered proxy: ${proxy.instanceName} => "${endpoint}"`);
     }

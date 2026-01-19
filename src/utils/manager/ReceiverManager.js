@@ -1,5 +1,6 @@
 import LoggableMixin from "../../mixins/LoggableMixin.js";
 import {
+    trimPathName,
     comparePathConfig, getPathData, PATH_MATCHER_REGEXP
 } from "../helper/UriPath.js";
 
@@ -68,7 +69,7 @@ export default class ReceiverManager extends LoggableMixin() {
         if (this.#receivers.size == 0) {
             return [];
         }
-        pathName = pathName.replace(/(^\/|\/$)/g, "");
+        pathName = trimPathName(pathName);
         pathName = decodeURI(pathName);
         const path = pathName.split("/");
         const uri = `/${pathName}`;

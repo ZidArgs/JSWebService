@@ -7,7 +7,7 @@ import RewriteRuleManager from "./manager/RewriteRuleManager.js";
 import {
     createOptionsHeader, createHeader
 } from "./helper/Header.js";
-import {cleanupPathName} from "./helper/UriPath.js";
+import {trimPathName} from "./helper/UriPath.js";
 import Request from "../http/Request.js";
 import Response from "../http/Response.js";
 
@@ -44,7 +44,7 @@ export default class HTTPServer extends LoggableMixin() {
         this.#logRequests = !!logRequests;
         this.#useSessions = !!useSessions;
         if (typeof basePath === "string" && basePath !== "") {
-            this.#basePath = `/${cleanupPathName(basePath)}/`;
+            this.#basePath = `/${trimPathName(basePath)}/`;
         }
         server.on("request", (request, response) => {
             this.#handleRequest(request, response);
