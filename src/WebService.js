@@ -26,6 +26,7 @@ export default class WebService {
         this.#logger = new Logger(`WebService:${this.port.toString().padStart(5, "0")}`);
         this.#server.logger = this.#logger;
         this.#logger.log("start server");
+        this.#logger.log(`listen to basePath: ${this.#server.basePath}`);
     }
 
     get basePath() {

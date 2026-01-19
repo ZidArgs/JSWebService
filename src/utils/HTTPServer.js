@@ -72,7 +72,7 @@ export default class HTTPServer extends LoggableMixin() {
 
         const originalPath = request.originalPath;
         if (!originalPath.startsWith(this.#basePath)) {
-            console.log(`"${originalPath}" does not match basePath "${this.#basePath}"`);
+            this.logger.log(`"${originalPath}" does not match basePath "${this.#basePath}"`);
             response.setStatusCode(404)
                 .setHeaders(createHeader(this.#enableCors))
                 .send();
@@ -155,7 +155,7 @@ export default class HTTPServer extends LoggableMixin() {
 
         const originalPath = request.originalPath;
         if (!originalPath.startsWith(this.#basePath)) {
-            console.log(`"${originalPath}" does not match basePath "${this.#basePath}"`);
+            this.logger.log(`"${originalPath}" does not match basePath "${this.#basePath}"`);
             socket.destroy();
             return;
         }
