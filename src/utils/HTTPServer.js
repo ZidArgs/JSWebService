@@ -43,8 +43,9 @@ export default class HTTPServer extends LoggableMixin() {
         this.#enableCors = !!enableCors;
         this.#logRequests = !!logRequests;
         this.#useSessions = !!useSessions;
-        if (typeof basePath === "string" && basePath !== "") {
-            this.#basePath = `/${trimPathName(basePath)}/`;
+        const trimmedBasePath = trimPathName(basePath);
+        if (trimmedBasePath !== "") {
+            this.#basePath = `/${trimmedBasePath}/`;
         }
         server.on("request", (request, response) => {
             this.#handleRequest(request, response);

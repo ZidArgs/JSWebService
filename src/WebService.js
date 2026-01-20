@@ -27,6 +27,7 @@ export default class WebService {
         this.#server.logger = this.#logger;
         this.#logger.log("start server");
         this.#logger.log(`listen to basePath: ${this.#server.basePath}`);
+        this.#logger.log(`cors mode enabled: ${!!options.enableCors}`);
     }
 
     get basePath() {
