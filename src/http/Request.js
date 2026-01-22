@@ -49,14 +49,14 @@ export default class Request {
             this.#method = request.method.toUpperCase();
             this.#prepareHeaders();
             this.#prepareCookies();
-            this.#location = new ReadonlyURL(request.url, this.#origin);
+            this.#location = new ReadonlyURL(request.url, this.#host);
             this.#originalPath = `/${this.#location.pathname.replace(/(^\/|\/$)/g, "")}`;
             this.#internalPath = this.#originalPath;
         }
     }
 
-    get #origin() {
-        return this.getHeader("origin") ?? `http://${this.getHeader("host") ?? process.env.HOST ?? "localhost"}`;
+    get #host() {
+        return `http://${this.getHeader("host") ?? process.env.HOST ?? "localhost"}`;
     }
 
     #prepareHeaders() {
