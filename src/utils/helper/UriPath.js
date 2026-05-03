@@ -2,14 +2,14 @@ export const PATH_MATCHER_REGEXP = /^\/(?:(?:(?:[^{}/]+|\{[a-zA-Z0-9_]+\})\/)*(?
 
 export const PATH_PARAM_REGEXP = /\{([a-zA-Z0-9_]+)\}/g;
 
-export  function trimPathName(pathName) {
+export function trimPathName(pathName) {
     if (typeof pathName !== "string" || pathName === "") {
         return "";
     }
     return pathName.trim().replace(/(^\/|\/$)/g, "");
 }
 
-export  function cleanupPathName(pathName) {
+export function cleanupPathName(pathName) {
     return trimPathName(pathName).replace(/\\/g, "\\\\").replace(/\./g, "\\.");
 }
 
