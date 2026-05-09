@@ -1,4 +1,4 @@
-import {debounce} from "../../utils/helper/Debouncer.js";
+import {debounce} from "@emcjs/core/util/Debouncer.js";
 
 export default class UserEntity extends EventTarget {
 

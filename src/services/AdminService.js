@@ -1,5 +1,5 @@
 import ServiceModule from "../ServiceModule.js";
-import AccountManager from "../util/AccountManager.js";
+import AccountManager from "../utils/manager/AccountManager.js";
 
 export default class AdminService extends ServiceModule {
 

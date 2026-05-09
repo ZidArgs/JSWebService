@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
-import {jsonReplacer} from "../utils/helper/JSON.js";
 import ServiceModule from "../ServiceModule.js";
+import {jsonReplacer} from "@emcjs/core/util/helper/JSON.js";
 
 const DEFAULT_INDEX_FILES = ["index.html", "index.htm"];
 const DEFAULT_SERVE_FOLDER = "./static";

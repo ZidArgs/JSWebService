@@ -1,4 +1,4 @@
-import ServiceModule from "jswebservice/ServiceModule.js";
+import ServiceModule from "../ServiceModule.js";
 
 export default class TestResponseService extends ServiceModule {
 

@@ -1,5 +1,5 @@
+import {uniqueKey} from "@emcjs/core/util/helper/UniqueGenerator.js";
 import Session from "../../data/Session.js";
-import {uniqueKey} from "../helper/UniqueGenerator.js";
 
 class SessionManager {
 

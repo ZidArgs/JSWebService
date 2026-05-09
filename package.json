@@ -1,6 +1,6 @@
 {
   "name": "jswebservice",
-  "version": "3.1.4",
+  "version": "3.1.5",
   "description": "helper for creating simple webservices",
   "author": "Denis Weiß (ZidArgs)",
   "license": "MIT",
@@ -11,6 +11,7 @@
   "homepage": "https://bitbucket.org/zidargs/jswebservice/src",
   "type": "module",
   "dependencies": {
+    "@emcjs/core": "https://github.com/ZidArgs/emcJS-Core.git/#1.0.7",
     "ws": "^7.2.1"
   },
   "devDependencies": {
@@ -18,7 +19,9 @@
     "@babel/eslint-parser": "^7.28.5",
     "@babel/plugin-syntax-top-level-await": "^7.14.5",
     "@stylistic/eslint-plugin": "^5.6.1",
-    "eslint": "^9.39.1"
+    "eslint": "^9.39.1",
+    "gulp": "^4.0.2",
+    "gulp-changed": "^5.0.4"
   },
   "exports": {
     "./*": "./src/*"
@@ -26,6 +29,7 @@
   "scripts": {
     "lint": "yarn eslint .",
     "lintfix": "yarn eslint --fix .",
+    "build": "gulp build",
     "serve": "node ./server.js"
   }
 }

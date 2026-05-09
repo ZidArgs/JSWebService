@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import Ping from "./Ping.js";
-import {uuid4} from "./helper/UniqueGenerator.js";
+import {uuid4} from "@emcjs/core/util/helper/UniqueGenerator.js";
 
 const PING_OUT = 10000;
 const EMPTY_FN = function() {};

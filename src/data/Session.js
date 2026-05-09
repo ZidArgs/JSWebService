@@ -1,4 +1,4 @@
-import {isStringNotEmpty} from "../utils/helper/CheckType.js";
+import {isStringNotEmpty} from "@emcjs/core/util/helper/CheckType.js";
 
 export default class Session {
 

@@ -1,4 +1,4 @@
-import Enum from "../../data/Enum.js";
+import Enum from "@emcjs/core/enum/Enum.js";
 
 export default class SameSiteValueEnum extends Enum {
 

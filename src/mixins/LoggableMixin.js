@@ -1,4 +1,4 @@
-import {createMixin} from "../utils/Mixin.js";
+import {createMixin} from "@emcjs/core/mixin/Mixin.js";
 import Logger from "../utils/Logger.js";
 
 export default createMixin((superclass) => class LoggableMixin extends superclass {

@@ -1,5 +1,5 @@
-import Cookie from "./Cookie.js";
-import Rest from "./Rest.js";
+import Cookie from "@emcjs/core/data/storage/global/Cookie.js";
+import Rest from "@emcjs/core/util/net/Rest.js";
 
 class Account {
 

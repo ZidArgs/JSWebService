@@ -4,8 +4,10 @@ import {
     isArrayOf,
     isDict,
     isNull,
-    isNumberNotNaN, isString, isStringNotEmpty
-} from "../utils/helper/CheckType.js";
+    isNumberNotNaN,
+    isString,
+    isStringNotEmpty
+} from "@emcjs/core/util/helper/CheckType.js";
 import SameSiteValueEnum from "./enum/SameSiteValueEnum.js";
 import {SESSION_COOKIE_NAME} from "./consts.js";
 
