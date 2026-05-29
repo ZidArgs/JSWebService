@@ -1,3 +1,7 @@
+/**
+ * Created based on https://github.com/freesoftwarefactory/parse-multipart
+ */
+
 import FileData from "../../data/FileData.js";
 import MultipartParsingState from "../../enum/MultipartParsingState.js";
 
