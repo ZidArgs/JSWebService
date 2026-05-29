@@ -1,4 +1,5 @@
-import {httpToWsUrl} from "../src/client/WebSocketClient.js";
+import FileUploader from "@emcjs/core/util/file/FileUploader.js";
+import {httpToWsUrl} from "jswebservice/client/WebSocketClient.js";
 
 // HTTP
 const response = await fetch("project/test");
@@ -20,3 +21,13 @@ ws.onopen = () => {
     };
     ws.send(JSON.stringify(msg));
 };
+
+// upload
+const fileUploader = new FileUploader();
+const formEl = document.getElementById("form");
+const fileEl = document.getElementById("file");
+formEl.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const file = fileEl.files[0];
+    fileUploader.upload(file);
+});

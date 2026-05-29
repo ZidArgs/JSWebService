@@ -1,5 +1,6 @@
 import WebService from "jswebservice/WebService.js";
 import StaticService from "./src/services/StaticService.js";
+import FileUploadService from "./src/services/FileUploadService.js";
 import TestResponseService from "./src/services/TestResponseService.js";
 import LocalProxy from "./src/utils/LocalProxy.js";
 
@@ -12,6 +13,9 @@ const remoteService = new WebService("12346", {
     logRequests: true
 });
 remoteService.registerServiceModule(StaticService, "", {serveFolder: "./webtest"});
+remoteService.registerServiceModule(StaticService, "_libs/emcjs/core", {serveFolder: "./node_modules/@emcjs/core/src"});
+remoteService.registerServiceModule(StaticService, "_libs/jswebservice", {serveFolder: "./src"});
+remoteService.registerServiceModule(FileUploadService, "upload", {targetFolder: "./_upload"});
 remoteService.registerServiceModule(TestResponseService, "project/{project}");
 
 // public service

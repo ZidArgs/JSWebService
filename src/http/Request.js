@@ -5,6 +5,7 @@ import SessionManager from "../utils/manager/SessionManager.js";
 import {
     ALLOW_COOKIES_NAME, SESSION_COOKIE_NAME
 } from "./consts.js";
+import {jsonParseSafe} from "@emcjs/core/util/helper/JSON.js";
 
 function decompileCookie(cookie) {
     const [name, value] = cookie.split("=");
@@ -37,6 +38,8 @@ export default class Request {
     #headers = new Map();
 
     #cookies = new Map();
+
+    #rawBody;
 
     #body;
 
@@ -130,9 +133,18 @@ export default class Request {
         return this.#request.url;
     }
 
+    async resolveRawBody() {
+        if (this.#rawBody == null) {
+            this.#rawBody = await resolveRequestBody(this.#request);
+        }
+        return this.#rawBody;
+    }
+
     async resolveBody() {
         if (this.#body == null) {
-            this.#body = await resolveRequestBody(this.#request);
+            const rawBody = await this.resolveRawBody();
+            const content = rawBody.toString();
+            this.#body = jsonParseSafe(content) ?? content;
         }
         return this.#body;
     }

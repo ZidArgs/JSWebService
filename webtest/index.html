@@ -7,11 +7,22 @@
     <meta name="robots" content="none">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#000000">
+    <script type="importmap">
+        {
+            "imports":{
+                "@emcjs/core/":"/_libs/emcjs/core/",
+                "jswebservice/":"/_libs/jswebservice/"
+            }
+        }
+    </script>
     <script type="module" src="./index.js"></script>
 </head>
 
 <body class="view">
-
+    <form id="form">
+        <input id="file" type="file" name="file">
+        <input type="submit" value="submit">
+    </form>
 </body>
 
 </html>

@@ -1,24 +1,13 @@
-export async function resolveRequestBody(request) {
-    const result = await getRequestBody(request);
-    if (result.length) {
-        try {
-            return JSON.parse(result);
-        } catch {
-            return result;
-        }
-    }
-    return result;
-}
-
-function getRequestBody(request) {
+export function resolveRequestBody(request) {
     return new Promise(function(resolve, reject) {
-        const res = [];
+        const parts = [];
         request.on("error", (err) => {
             reject(err);
         }).on("data", (chunk) => {
-            res.push(chunk);
+            parts.push(chunk);
         }).on("end", async () => {
-            resolve(res.join(""));
+            const result = Buffer.concat(parts);
+            resolve(result);
         });
     });
 }
