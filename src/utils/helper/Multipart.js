@@ -97,7 +97,7 @@ export function getMultipartBoundary(header) {
             return boundary.trim().replace(/^["']|["']$/g, "");
         }
     }
-    return "";
+    return null;
 }
 
 function createFileData(contentDispositionHeader, contentTypeHeader, part) {
@@ -109,5 +109,5 @@ function createFileData(contentDispositionHeader, contentTypeHeader, part) {
 }
 
 function isNewLineChar(ch) {
-    return ch === NEWLINE_CHAR || ch === RETURN_CHAR;;
+    return ch === NEWLINE_CHAR || ch === RETURN_CHAR;
 }
