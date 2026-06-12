@@ -6,7 +6,7 @@ import LocalProxyManager from "./manager/LocalProxyManager.js";
 import RewriteRuleManager from "./manager/RewriteRuleManager.js";
 import {
     createOptionsHeader, createHeader
-} from "./helper/Header.js";
+} from "./header/CreateHeader.js";
 import {trimPathName} from "./helper/UriPath.js";
 import Request from "../http/Request.js";
 import Response from "../http/Response.js";

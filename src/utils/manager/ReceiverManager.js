@@ -1,8 +1,7 @@
+import {compareSpecifity} from "@emcjs/core/util/comparator/Specifity.js";
 import LoggableMixin from "../../mixins/LoggableMixin.js";
-import {
-    trimPathName,
-    comparePathConfig, getPathData, PATH_MATCHER_REGEXP
-} from "../helper/UriPath.js";
+import {trimPathName} from "../helper/UriPath.js";
+import PathData from "../../data/PathData.js";
 
 export default class ReceiverManager extends LoggableMixin() {
 
@@ -15,15 +14,15 @@ export default class ReceiverManager extends LoggableMixin() {
     }
 
     add(pathName, receiver) {
-        if (!PATH_MATCHER_REGEXP.test(pathName)) {
+        if (!PathData.testPath(pathName)) {
             throw new Error(`can not register receiver: "${pathName}" does not match pattern`);
         }
         if (!this.#receivers.has(pathName)) {
-            const config = getPathData(pathName);
+            const config = new PathData(pathName);
             config.receiver = receiver;
             this.#receivers.set(pathName, config);
             this.#orderedReceivers.push(config);
-            this.#orderedReceivers.sort(comparePathConfig);
+            this.#orderedReceivers.sort(compareSpecifity);
 
             const {
                 pathName: path, params, specifity

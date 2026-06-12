@@ -150,7 +150,7 @@ export default class Request {
     }
 
     getHeader(name) {
-        return this.#headers.get(name.toLowerCase());
+        return this.#headers.get(name.toString().toLowerCase());
     }
 
     getCookie(name) {

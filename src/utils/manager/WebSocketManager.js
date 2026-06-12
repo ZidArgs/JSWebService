@@ -1,7 +1,6 @@
+import {compareSpecifity} from "@emcjs/core/util/comparator/Specifity.js";
 import LoggableMixin from "../../mixins/LoggableMixin.js";
-import {
-    comparePathConfig, getPathData, PATH_MATCHER_REGEXP
-} from "../helper/UriPath.js";
+import PathData from "../../data/PathData.js";
 
 export default class WebSocketManager extends LoggableMixin() {
 
@@ -10,15 +9,15 @@ export default class WebSocketManager extends LoggableMixin() {
     #orderedSockets = [];
 
     add(pathName, wss) {
-        if (!PATH_MATCHER_REGEXP.test(pathName)) {
+        if (!PathData.testPath(pathName)) {
             throw new Error(`can not register websocket: "${pathName}" does not match pattern`);
         }
         if (!this.#sockets.has(pathName)) {
-            const config = getPathData(pathName);
+            const config = new PathData(pathName);
             config.wss = wss;
             this.#sockets.set(pathName, config);
             this.#orderedSockets.push(config);
-            this.#orderedSockets.sort(comparePathConfig);
+            this.#orderedSockets.sort(compareSpecifity);
 
             const {
                 pathName: path, params, specifity
