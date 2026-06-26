@@ -1,53 +1,36 @@
-import {debounce} from "@emcjs/core/util/Debouncer.js";
+import AbstractEntity from "./AbstractEntity.js";
+import SecretCredentials from "../auth/SecretCredentials.js";
+import GroupEntity from "./GroupEntity.js";
+import {isStringNotEmpty} from "@emcjs/core/util/helper/CheckType.js";
+import TOTPCredentials from "../auth/TOTPCredentials.js";
 
-export default class UserEntity extends EventTarget {
-
-    #id = "";
+export default class UserEntity extends AbstractEntity {
 
     #email = "";
 
-    #password = ""; // TODO make PasswordEntity containing password hash, salt and creation date
+    #alias = "";
 
-    #salt = "";
+    #password = null;
 
-    #api_token = ""; // TODO make SecretEntity containing value and creation date
+    #token = null;
 
-    #totp_secret = ""; // TODO make SecretEntity containing value and creation date
+    #totp = null;
 
     #active = true;
 
     #expires = false;
 
+    #last_login = new Date();
+
     #groups = new Set();
 
     #permissions = new Set();
-
-    #created = new Date();
-
-    #last_login = new Date();
-
-    #notifyChange = debounce(() => {
-        this.dispatchEvent(new Event("change"));
-    });
-
-    set id(value) {
-        if (typeof value === "string") {
-            if (this.#id !== value) {
-                this.#id = value;
-                this.#notifyChange();
-            }
-        }
-    }
-
-    get id() {
-        return this.#id;
-    }
 
     set email(value) {
         if (typeof value === "string") {
             if (this.#email !== value) {
                 this.#email = value;
-                this.#notifyChange();
+                this.notifyChange();
             }
         }
     }
@@ -56,11 +39,24 @@ export default class UserEntity extends EventTarget {
         return this.#email;
     }
 
-    set password(value) {
+    set alias(value) {
         if (typeof value === "string") {
+            if (this.#alias !== value) {
+                this.#alias = value;
+                this.notifyChange();
+            }
+        }
+    }
+
+    get alias() {
+        return this.#alias;
+    }
+
+    set password(value) {
+        if (value instanceof SecretCredentials) {
             if (this.#password !== value) {
                 this.#password = value;
-                this.#notifyChange();
+                this.notifyChange();
             }
         }
     }
@@ -69,50 +65,37 @@ export default class UserEntity extends EventTarget {
         return this.#password;
     }
 
-    set salt(value) {
-        if (typeof value === "string") {
-            if (this.#salt !== value) {
-                this.#salt = value;
-                this.#notifyChange();
+    set token(value) {
+        if (value instanceof SecretCredentials) {
+            if (this.#token !== value) {
+                this.#token = value;
+                this.notifyChange();
             }
         }
     }
 
-    get salt() {
-        return this.#salt;
+    get token() {
+        return this.#token;
     }
 
-    set api_token(value) {
-        if (typeof value === "string") {
-            if (this.#api_token !== value) {
-                this.#api_token = value;
-                this.#notifyChange();
+    set totp(value) {
+        if (value instanceof TOTPCredentials) {
+            if (this.#totp !== value) {
+                this.#totp = value;
+                this.notifyChange();
             }
         }
     }
 
-    get api_token() {
-        return this.#api_token;
-    }
-
-    set totp_secret(value) {
-        if (typeof value === "string") {
-            if (this.#totp_secret !== value) {
-                this.#totp_secret = value;
-                this.#notifyChange();
-            }
-        }
-    }
-
-    get totp_secret() {
-        return this.#totp_secret;
+    get totp() {
+        return this.#totp;
     }
 
     set active(value) {
         value = !!value;
         if (this.#active !== value) {
             this.#active = value;
-            this.#notifyChange();
+            this.notifyChange();
         }
     }
 
@@ -124,12 +107,12 @@ export default class UserEntity extends EventTarget {
         if (value === null || value === undefined || value === false) {
             if (this.#expires !== false) {
                 this.#expires = false;
-                this.#notifyChange();
+                this.notifyChange();
             }
         } else if (value instanceof Date) {
             if (this.#expires === false || this.#expires.getTime() !== value.getTime()) {
                 this.#expires = value;
-                this.#notifyChange();
+                this.notifyChange();
             }
         }
     }
@@ -138,34 +121,16 @@ export default class UserEntity extends EventTarget {
         return this.#expires;
     }
 
-    set created(value) {
-        if (value === null || value === undefined || value === false) {
-            if (this.#created !== false) {
-                this.#created = false;
-                this.#notifyChange();
-            }
-        } else if (value instanceof Date) {
-            if (this.#created === false || this.#created.getTime() !== value.getTime()) {
-                this.#created = value;
-                this.#notifyChange();
-            }
-        }
-    }
-
-    get created() {
-        return this.#created;
-    }
-
     set lastLogin(value) {
         if (value === null || value === undefined || value === false) {
             if (this.#last_login !== false) {
                 this.#last_login = false;
-                this.#notifyChange();
+                this.notifyChange();
             }
         } else if (value instanceof Date) {
             if (this.#last_login === false || this.#last_login.getTime() !== value.getTime()) {
                 this.#last_login = value;
-                this.#notifyChange();
+                this.notifyChange();
             }
         }
     }
@@ -176,18 +141,30 @@ export default class UserEntity extends EventTarget {
 
     addGroup(...values) {
         for (const value of values) {
-            if (typeof value === "string" && value !== "" && !this.#groups.has(value)) {
+            if (value instanceof GroupEntity && !this.#groups.has(value)) {
                 this.#groups.add(value);
-                this.#notifyChange();
+                this.notifyChange();
+            } else if (isStringNotEmpty(value)) {
+                const groupEntity = new GroupEntity(value);
+                if (!this.#groups.has(groupEntity)) {
+                    this.#groups.add(groupEntity);
+                    this.notifyChange();
+                }
             }
         }
     }
 
     removeGroup(...values) {
         for (const value of values) {
-            if (typeof value === "string" && value !== "" && this.#groups.has(value)) {
+            if (value instanceof GroupEntity && this.#groups.has(value)) {
                 this.#groups.delete(value);
-                this.#notifyChange();
+                this.notifyChange();
+            } else if (isStringNotEmpty(value)) {
+                const groupEntity = new GroupEntity(value);
+                if (this.#groups.has(groupEntity)) {
+                    this.#groups.delete(groupEntity);
+                    this.notifyChange();
+                }
             }
         }
     }
@@ -200,7 +177,7 @@ export default class UserEntity extends EventTarget {
         for (const value of values) {
             if (typeof value === "string" && value !== "" && !this.#permissions.has(value)) {
                 this.#permissions.add(value);
-                this.#notifyChange();
+                this.notifyChange();
             }
         }
     }
@@ -209,7 +186,7 @@ export default class UserEntity extends EventTarget {
         for (const value of values) {
             if (typeof value === "string" && value !== "" && this.#permissions.has(value)) {
                 this.#permissions.delete(value);
-                this.#notifyChange();
+                this.notifyChange();
             }
         }
     }
@@ -220,6 +197,23 @@ export default class UserEntity extends EventTarget {
 
     get permissions() {
         return [...this.#permissions];
+    }
+
+    toJSON() {
+        return {
+            id: this.id,
+            created: this.created,
+            email: this.email,
+            alias: this.alias,
+            password: this.password,
+            token: this.token,
+            totp: this.totp,
+            active: this.active,
+            expires: this.expires,
+            last_login: this.last_login,
+            groups: this.groups,
+            permissions: this.permissions
+        };
     }
 
 }

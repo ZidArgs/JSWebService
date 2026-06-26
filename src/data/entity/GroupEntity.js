@@ -1,8 +1,10 @@
-import {debounce} from "@emcjs/core/util/Debouncer.js";
+import AbstractEntity from "./AbstractEntity.js";
 
-export default class UserEntity extends EventTarget {
+const GROUP_INSTANCES = new Map();
 
-    #id = "";
+export default class GroupEntity extends AbstractEntity {
+
+    #name = "";
 
     #active = true;
 
@@ -10,30 +12,24 @@ export default class UserEntity extends EventTarget {
 
     #permissions = new Set();
 
-    #created = new Date();
-
-    #notifyChange = debounce(() => {
-        this.dispatchEvent(new Event("change"));
-    });
-
-    set id(value) {
-        if (typeof value === "string") {
-            if (this.#id !== value) {
-                this.#id = value;
-                this.#notifyChange();
-            }
+    constructor(name) {
+        if (GROUP_INSTANCES.has(name)) {
+            return GROUP_INSTANCES.get(name);
         }
+        super();
+        this.#name = name;
+        GROUP_INSTANCES.set(name, this);
     }
 
-    get id() {
-        return this.#id;
+    get name() {
+        return this.#name;
     }
 
     set active(value) {
         value = !!value;
         if (this.#active !== value) {
             this.#active = value;
-            this.#notifyChange();
+            this.notifyChange();
         }
     }
 
@@ -45,12 +41,12 @@ export default class UserEntity extends EventTarget {
         if (value === null || value === undefined || value === false) {
             if (this.#expires !== false) {
                 this.#expires = false;
-                this.#notifyChange();
+                this.notifyChange();
             }
         } else if (value instanceof Date) {
             if (this.#expires === false || this.#expires.getTime() !== value.getTime()) {
                 this.#expires = value;
-                this.#notifyChange();
+                this.notifyChange();
             }
         }
     }
@@ -59,29 +55,11 @@ export default class UserEntity extends EventTarget {
         return this.#expires;
     }
 
-    set created(value) {
-        if (value === null || value === undefined || value === false) {
-            if (this.#created !== false) {
-                this.#created = false;
-                this.#notifyChange();
-            }
-        } else if (value instanceof Date) {
-            if (this.#created === false || this.#created.getTime() !== value.getTime()) {
-                this.#created = value;
-                this.#notifyChange();
-            }
-        }
-    }
-
-    get created() {
-        return this.#created;
-    }
-
     addPermission(value) {
         if (typeof value === "string") {
             if (!this.#permissions.has(value)) {
                 this.#permissions.add(value);
-                this.#notifyChange();
+                this.notifyChange();
             }
         }
     }
@@ -90,7 +68,7 @@ export default class UserEntity extends EventTarget {
         if (typeof value === "string") {
             if (this.#permissions.has(value)) {
                 this.#permissions.delete(value);
-                this.#notifyChange();
+                this.notifyChange();
             }
         }
     }
@@ -101,6 +79,17 @@ export default class UserEntity extends EventTarget {
 
     get permissions() {
         return [...this.#permissions];
+    }
+
+    toJSON() {
+        return {
+            id: this.id,
+            created: this.created,
+            name: this.name,
+            active: this.active,
+            expires: this.expires,
+            permissions: this.permissions
+        };
     }
 
 }
