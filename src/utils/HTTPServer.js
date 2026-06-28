@@ -4,6 +4,7 @@ import WebSocketManager from "./manager/WebSocketManager.js";
 import ReceiverManager from "./manager/ReceiverManager.js";
 import LocalProxyManager from "./manager/LocalProxyManager.js";
 import RewriteRuleManager from "./manager/RewriteRuleManager.js";
+import PermissionManager from "./manager/PermissionManager.js";
 import {
     createOptionsHeader, createHeader
 } from "./header/CreateHeader.js";
@@ -31,6 +32,8 @@ export default class HTTPServer extends LoggableMixin() {
     #rewriteRuleManager = new RewriteRuleManager();
 
     #localProxyManager = new LocalProxyManager();
+
+    #permissionManager = new PermissionManager();
 
     constructor(port, options = {}) {
         super();
@@ -61,6 +64,7 @@ export default class HTTPServer extends LoggableMixin() {
         this.#receiverManager.logger = this.logger;
         this.#rewriteRuleManager.logger = this.logger;
         this.#localProxyManager.logger = this.logger;
+        this.#permissionManager.logger = this.logger;
     }
 
     get logger() {
@@ -82,6 +86,17 @@ export default class HTTPServer extends LoggableMixin() {
 
         const requestPath = originalPath.replace(this.#basePath, "/");
 
+        const permissions = this.#permissionManager.get(requestPath);
+        if (permissions != null && !permissions.public) {
+            // TODO check for role access
+            // TODO redirect to login page if it is defined and user is not logged in
+            this.logger.log(`permission denied for request => ${requestPath}`);
+            response.setStatusCode(403)
+                .setHeaders(createHeader(this.#enableCors, {type: "application/json; charset=utf-8"}))
+                .send(JSON.stringify({url: request.url}));
+            return;
+        }
+
         try {
             if (this.#logRequests) {
                 this.logger.log("--- START REQUEST ---");
@@ -96,7 +111,10 @@ export default class HTTPServer extends LoggableMixin() {
                 return;
             }
             const rewrittenPath = this.#rewriteRuleManager.rewrite(requestPath);
-            request = request.redirectInternal(rewrittenPath);
+            if (rewrittenPath !== requestPath) {
+                this.logger.log(`internal redirect ${requestPath} => ${rewrittenPath}`);
+                request = request.redirectInternal(rewrittenPath);
+            }
             if (this.#logRequests) {
                 this.logger.log(`requesting ${request.method} => ${request.location.pathname}`);
             }
@@ -163,6 +181,14 @@ export default class HTTPServer extends LoggableMixin() {
 
         const requestPath = originalPath.replace(this.#basePath, "/");
 
+        const permissions = this.#permissionManager.get(requestPath);
+        if (permissions != null && !permissions.public) {
+            // TODO check for role access
+            this.logger.log(`permission denied for socket => ${requestPath}`);
+            socket.destroy();
+            return;
+        }
+
         const rewrittenPath = this.#rewriteRuleManager.rewrite(requestPath);
 
         if (this.#logRequests) {
@@ -210,6 +236,10 @@ export default class HTTPServer extends LoggableMixin() {
 
     get port() {
         return this.#port;
+    }
+
+    get permissions() {
+        return this.#permissionManager;
     }
 
     #maybeWriteSession(request, response) {

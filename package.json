@@ -11,7 +11,7 @@
   "homepage": "https://bitbucket.org/zidargs/jswebservice/src",
   "type": "module",
   "dependencies": {
-    "@emcjs/core": "https://github.com/ZidArgs/emcJS-Core.git/#1.1.4",
+    "@emcjs/core": "https://github.com/ZidArgs/emcJS-Core.git/#1.1.9",
     "ws": "^7.2.1"
   },
   "devDependencies": {

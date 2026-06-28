@@ -8,11 +8,15 @@ export default class UserEntity extends AbstractEntity {
 
     #email = "";
 
-    #alias = "";
+    #username = "";
+
+    #given_name = "";
+
+    #last_name = "";
 
     #password = null;
 
-    #token = null;
+    #token = new Map();
 
     #totp = null;
 
@@ -23,8 +27,6 @@ export default class UserEntity extends AbstractEntity {
     #last_login = new Date();
 
     #groups = new Set();
-
-    #permissions = new Set();
 
     set email(value) {
         if (typeof value === "string") {
@@ -39,17 +41,43 @@ export default class UserEntity extends AbstractEntity {
         return this.#email;
     }
 
-    set alias(value) {
+    set username(value) {
         if (typeof value === "string") {
-            if (this.#alias !== value) {
-                this.#alias = value;
+            if (this.#username !== value) {
+                this.#username = value;
                 this.notifyChange();
             }
         }
     }
 
-    get alias() {
-        return this.#alias;
+    get username() {
+        return this.#username;
+    }
+
+    set givenName(value) {
+        if (typeof value === "string") {
+            if (this.#given_name !== value) {
+                this.#given_name = value;
+                this.notifyChange();
+            }
+        }
+    }
+
+    get givenName() {
+        return this.#given_name;
+    }
+
+    set lastName(value) {
+        if (typeof value === "string") {
+            if (this.#last_name !== value) {
+                this.#last_name = value;
+                this.notifyChange();
+            }
+        }
+    }
+
+    get lastName() {
+        return this.#last_name;
     }
 
     set password(value) {
@@ -65,17 +93,25 @@ export default class UserEntity extends AbstractEntity {
         return this.#password;
     }
 
-    set token(value) {
+    setToken(name, value) {
         if (value instanceof SecretCredentials) {
-            if (this.#token !== value) {
-                this.#token = value;
+            const oldToken = this.#token.get(name);
+            if (oldToken !== value) {
+                this.#token.set(name, value);
                 this.notifyChange();
             }
         }
     }
 
+    deleteToken(name) {
+        if (this.#token.has(name)) {
+            this.#groups.delete(name);
+            this.notifyChange();
+        }
+    }
+
     get token() {
-        return this.#token;
+        return Object.fromEntries(this.#token);
     }
 
     set totp(value) {
@@ -141,13 +177,12 @@ export default class UserEntity extends AbstractEntity {
 
     addGroup(...values) {
         for (const value of values) {
-            if (value instanceof GroupEntity && !this.#groups.has(value)) {
-                this.#groups.add(value);
+            if (value instanceof GroupEntity && !this.#groups.has(value.id)) {
+                this.#groups.add(value.id);
                 this.notifyChange();
             } else if (isStringNotEmpty(value)) {
-                const groupEntity = new GroupEntity(value);
-                if (!this.#groups.has(groupEntity)) {
-                    this.#groups.add(groupEntity);
+                if (!this.#groups.has(value)) {
+                    this.#groups.add(value);
                     this.notifyChange();
                 }
             }
@@ -156,13 +191,12 @@ export default class UserEntity extends AbstractEntity {
 
     removeGroup(...values) {
         for (const value of values) {
-            if (value instanceof GroupEntity && this.#groups.has(value)) {
-                this.#groups.delete(value);
+            if (value instanceof GroupEntity && this.#groups.has(value.id)) {
+                this.#groups.delete(value.id);
                 this.notifyChange();
             } else if (isStringNotEmpty(value)) {
-                const groupEntity = new GroupEntity(value);
-                if (this.#groups.has(groupEntity)) {
-                    this.#groups.delete(groupEntity);
+                if (this.#groups.has(value)) {
+                    this.#groups.delete(value);
                     this.notifyChange();
                 }
             }
@@ -173,30 +207,16 @@ export default class UserEntity extends AbstractEntity {
         return [...this.#groups];
     }
 
-    addPermission(...values) {
-        for (const value of values) {
-            if (typeof value === "string" && value !== "" && !this.#permissions.has(value)) {
-                this.#permissions.add(value);
-                this.notifyChange();
+    hasRole(value) {
+        if (super.hasRole(value)) {
+            return true;
+        }
+        for (const group of this.#groups) {
+            if (group.hasRole(value)) {
+                return true;
             }
         }
-    }
-
-    removePermission(...values) {
-        for (const value of values) {
-            if (typeof value === "string" && value !== "" && this.#permissions.has(value)) {
-                this.#permissions.delete(value);
-                this.notifyChange();
-            }
-        }
-    }
-
-    hasPermission(value) {
-        return this.#permissions.has(value);
-    }
-
-    get permissions() {
-        return [...this.#permissions];
+        return false;
     }
 
     toJSON() {
@@ -204,15 +224,17 @@ export default class UserEntity extends AbstractEntity {
             id: this.id,
             created: this.created,
             email: this.email,
-            alias: this.alias,
+            username: this.username,
+            givenName: this.givenName,
+            lastName: this.lastName,
             password: this.password,
             token: this.token,
             totp: this.totp,
             active: this.active,
             expires: this.expires,
-            last_login: this.last_login,
-            groups: this.groups,
-            permissions: this.permissions
+            lastLogin: this.lastLogin,
+            roles: this.roles,
+            groups: this.groups
         };
     }
 

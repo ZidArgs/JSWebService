@@ -1,4 +1,4 @@
-import HTTP from "./utils/HTTPServer.js";
+import HTTPServer from "./utils/HTTPServer.js";
 import ServiceWrapper from "./utils/ServiceWrapper.js";
 import ServiceModule from "./ServiceModule.js";
 import Logger from "./utils/Logger.js";
@@ -22,7 +22,7 @@ export default class WebService {
         if (typeof options !== "object" || Array.isArray(options)) {
             throw new Error("options has to be a dict or null");
         }
-        this.#server = new HTTP(getPort(port), options);
+        this.#server = new HTTPServer(getPort(port), options);
         this.#logger = new Logger(`WebService:${this.port.toString().padStart(5, "0")}`);
         this.#server.logger = this.#logger;
         this.#logger.log("start server");
@@ -62,6 +62,10 @@ export default class WebService {
         endpoint = `/${endpoint}`;
         this.#server.registerLocalProxy(endpoint, proxy);
         this.#logger.log(`registered proxy: ${proxy.instanceName} => "${endpoint}"`);
+    }
+
+    get permissions() {
+        return this.#server.permissions;
     }
 
     printServerInfoPanel() {

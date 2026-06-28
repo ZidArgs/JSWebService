@@ -6,15 +6,15 @@ import {encryptSecret} from "../../utils/EncryptSecret.js";
 
 export default class SecretCredentials extends AbstractCredentials {
 
-    #secretHash = "";
+    #hash = "";
 
     #salt = "";
 
     #iterations = 0;
 
-    constructor(secretHash, salt, iterations) {
-        if (!isStringNotEmpty(secretHash)) {
-            throw new TypeError("secretHash has to be a non empty string");
+    constructor(hash, salt, iterations) {
+        if (!isStringNotEmpty(hash)) {
+            throw new TypeError("hash has to be a non empty string");
         }
         if (!isStringNotEmpty(salt)) {
             throw new TypeError("salt has to be a non empty string");
@@ -23,13 +23,13 @@ export default class SecretCredentials extends AbstractCredentials {
             throw new TypeError("iterations has to be a valid positive number");
         }
         super();
-        this.#secretHash = secretHash;
+        this.#hash = hash;
         this.#salt = salt;
         this.#iterations = iterations;
     }
 
-    get secretHash() {
-        return this.#secretHash;
+    get hash() {
+        return this.#hash;
     }
 
     get salt() {
@@ -44,13 +44,13 @@ export default class SecretCredentials extends AbstractCredentials {
         if (!isStringNotEmpty(secret)) {
             throw new TypeError("secret has to be a non empty string");
         }
-        const secretHash = encryptSecret(secret, this.salt, this.iterations);
-        return secretHash === this.#secretHash;
+        const hash = encryptSecret(secret, this.salt, this.iterations);
+        return hash === this.#hash;
     }
 
     toJSON() {
         return {
-            secretHash: this.secretHash,
+            hash: this.hash,
             salt: this.salt,
             iterations: this.iterations
         };

@@ -30,9 +30,12 @@ export default class PathData {
         for (const part of this.#path) {
             if (part === "*") {
                 matcherList.push(".*");
-                this.#specifity.push(3);
+                this.#specifity.push(4);
             } else if (part.includes("*")) {
                 matcherList.push(part.replace(/\*/g, ".*"));
+                this.#specifity.push(3);
+            } else if (part.includes("?")) {
+                matcherList.push(part.replace(/\?/g, "."));
                 this.#specifity.push(2);
             } else if (part.match(PATH_PARAM_REGEXP)) {
                 const paramName = part.slice(1, -1);

@@ -1,4 +1,4 @@
-import WebService from "jswebservice/WebService.js";
+import WebService from "./src/WebService.js";
 import StaticService from "./src/services/StaticService.js";
 import FileUploadService from "./src/services/FileUploadService.js";
 import TestResponseService from "./src/services/TestResponseService.js";
@@ -17,6 +17,10 @@ remoteService.registerServiceModule(StaticService, "_libs/emcjs/core", {serveFol
 remoteService.registerServiceModule(StaticService, "_libs/jswebservice", {serveFolder: "./src"});
 remoteService.registerServiceModule(FileUploadService, "upload", {targetFolder: "./_upload"});
 remoteService.registerServiceModule(TestResponseService, "project/{project}");
+remoteService.registerServiceModule(StaticService, "get_upload", {serveFolder: "./_upload"});
+
+remoteService.permissions.setPublic()
+    .configurePath("get_upload").setPrivate();
 
 // public service
 const service = new WebService(port, {

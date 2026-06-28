@@ -1,11 +1,12 @@
 import http from "http";
+import {jsonParseSafe} from "@emcjs/core/util/helper/JSON.js";
+import {isURLPath} from "@emcjs/core/util/helper/CheckType.js";
 import ReadonlyURL from "./ReadonlyURL.js";
 import {resolveRequestBody} from "../utils/helper/Request.js";
 import SessionManager from "../utils/manager/SessionManager.js";
 import {
     ALLOW_COOKIES_NAME, SESSION_COOKIE_NAME
 } from "./consts.js";
-import {jsonParseSafe} from "@emcjs/core/util/helper/JSON.js";
 
 function decompileCookie(cookie) {
     const [name, value] = cookie.split("=");
@@ -14,8 +15,6 @@ function decompileCookie(cookie) {
         value: decodeURIComponent(value)
     };
 }
-
-const PRIVATE_CONSTRUCTOR_KEY = Symbol();
 
 export default class Request {
 
@@ -44,18 +43,16 @@ export default class Request {
     #body;
 
     constructor(request) {
-        if (request != PRIVATE_CONSTRUCTOR_KEY) {
-            if (!(request instanceof http.IncomingMessage)) {
-                throw new TypeError("request must be a IncomingMessage");
-            }
-            this.#request = request;
-            this.#method = request.method.toUpperCase();
-            this.#prepareHeaders();
-            this.#prepareCookies();
-            this.#location = new ReadonlyURL(request.url, this.#host);
-            this.#originalPath = `/${this.#location.pathname.replace(/(^\/|\/$)/g, "")}`;
-            this.#internalPath = this.#originalPath;
+        if (!(request instanceof http.IncomingMessage)) {
+            throw new TypeError("request must be a IncomingMessage");
         }
+        this.#request = request;
+        this.#method = request.method.toUpperCase();
+        this.#prepareHeaders();
+        this.#prepareCookies();
+        this.#location = new ReadonlyURL(request.url, this.#host);
+        this.#originalPath = `/${this.#location.pathname.replace(/(^\/|\/$)/g, "")}`;
+        this.#internalPath = this.#originalPath;
     }
 
     get #host() {
@@ -163,17 +160,11 @@ export default class Request {
     }
 
     redirectInternal(internalPath) {
-        const newRequest = new Request(PRIVATE_CONSTRUCTOR_KEY);
-        newRequest.#request = this.#request;
-        newRequest.#session = this.#session;
-        newRequest.#isNewSession = this.#isNewSession;
-        newRequest.#allowsCookies = this.#allowsCookies;
-        newRequest.#method = this.#method;
-        newRequest.#location = this.#location;
-        newRequest.#originalPath = this.#originalPath;
+        if (!isURLPath(internalPath)) {
+            throw new Error(`internalPath does not resemble a path: "${internalPath}"`);
+        }
+        const newRequest = new Request(this.#request);
         newRequest.#internalPath = internalPath;
-        newRequest.#headers = new Map(this.#headers);
-        newRequest.#cookies = new Map(this.#cookies);
         return newRequest;
     }
 
