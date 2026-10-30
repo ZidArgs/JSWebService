@@ -124,32 +124,36 @@ export default class HTTPServer extends LoggableMixin() {
                     .setHeaders(createOptionsHeader(this.#enableCors))
                     .send();
             } else {
-                const res = await this.#receiverManager.execute(request);
+                const res = await this.#receiverManager.execute(request, response);
                 this.#maybeWriteSession(request, response);
                 // TODO use error code handler if registered into ErrorCodeManager
-                response.setStatusCode(res.status ?? 200)
-                    .setHeaders(createHeader(this.#enableCors, res.options));
-                if (res.content != null) {
-                    if (this.#logRequests) {
-                        this.logger.log("responding with plaintext");
+                if (!response.isFinished()) {
+                    response.setStatusCode(res.status ?? 200)
+                        .setHeaders(createHeader(this.#enableCors, res.options));
+                    if (res.content != null) {
+                        if (this.#logRequests) {
+                            this.logger.log("responding with plaintext");
+                        }
+                        response.send(res.content);
+                    } else if (res.stream != null) {
+                        if (this.#logRequests) {
+                            this.logger.log("responding with a stream");
+                        }
+                        response.send(res.stream);
+                    } else if (res.json != null) {
+                        if (this.#logRequests) {
+                            this.logger.log("responding with json");
+                        }
+                        response.setHeader("Content-Type", "application/json; charset=utf-8")
+                            .send(JSON.stringify(res.json));
+                    } else {
+                        if (this.#logRequests) {
+                            this.logger.log("empty response");
+                        }
+                        response.send();
                     }
-                    response.send(res.content);
-                } else if (res.stream != null) {
-                    if (this.#logRequests) {
-                        this.logger.log("responding with a stream");
-                    }
-                    response.send(res.stream);
-                } else if (res.json != null) {
-                    if (this.#logRequests) {
-                        this.logger.log("responding with json");
-                    }
-                    response.setHeader("Content-Type", "application/json; charset=utf-8")
-                        .send(JSON.stringify(res.json));
-                } else {
-                    if (this.#logRequests) {
-                        this.logger.log("empty response");
-                    }
-                    response.send();
+                } else if (this.#logRequests) {
+                    this.logger.log("response already send");
                 }
                 if (this.#logRequests) {
                     this.logger.log("--- END REQUEST ---");

@@ -24,8 +24,8 @@ export default class FileUploadService extends ServiceModule {
         this.logger.log(`Target folder: "${this.#targetFolder}"`);
     }
 
-    async onrequest(request/* , params */) {
-        if (request.method == "POST") {
+    async onrequest(request/* , response, params */) {
+        if (request.method === "POST") {
             // try multipart
             const boundary = getMultipartBoundary(request);
             if (boundary != null) {

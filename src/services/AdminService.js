@@ -33,7 +33,7 @@ export default class AdminService extends ServiceModule {
         this.#hostData.delete(name);
     }
 
-    async onrequest(request/* , params */) {
+    async onrequest(request/* , response, params */) {
         const isAdmin = this.#isUserAdmin(request.query.token);
 
         if (!isAdmin) {

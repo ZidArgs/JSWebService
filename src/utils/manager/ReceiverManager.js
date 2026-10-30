@@ -51,14 +51,14 @@ export default class ReceiverManager extends LoggableMixin() {
         this.#orderedReceivers.filter((entry) => entry.pathName !== pathName);
     }
 
-    async execute(request) {
+    async execute(request, response) {
         if (this.#receivers.size == 0) {
             this.logger.log("no receiver registered");
             return {status: 404};
         }
         const [receiver, params] = this.get(request.internalPath);
         if (receiver != null) {
-            return await receiver.onrequest(request, params);
+            return await receiver.onrequest(request, response, params);
         }
         this.logger.log(`no matching receiver for path "${request.internalPath}"`);
         return {status: 404};

@@ -34,8 +34,8 @@ export default class AccountService extends ServiceModule {
         this.#hostData.delete(name);
     }
 
-    async onrequest(request, params) {
-        if (request.method == "POST") {
+    async onrequest(request, response, params) {
+        if (request.method === "POST") {
             switch (params[0]) {
                 case "login": {
                     return await this.#login(request.query.username, request.query.pass);
@@ -50,7 +50,7 @@ export default class AccountService extends ServiceModule {
                     return this.#removeAccount(request.query.token, request.query.pass);
                 }
             }
-        } else if (request.method == "GET") {
+        } else if (request.method === "GET") {
             switch (params[0]) {
                 case "user": {
                     return await this.#getAccountData(request.query.token);

@@ -70,8 +70,8 @@ export default class StaticService extends ServiceModule {
         }
     }
 
-    async onrequest(request, params) {
-        if (request.method == "GET") {
+    async onrequest(request, response, params) {
+        if (request.method === "GET") {
             const reqestPath = params["@restPath"];
             const internalRequestPath = this.#redirectPath(reqestPath);
             const filePath = path.resolve(this.#serveFolder, internalRequestPath);

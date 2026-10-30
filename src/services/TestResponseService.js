@@ -10,7 +10,7 @@ export default class TestResponseService extends ServiceModule {
         this.#wss.onmessage = (sender, msg) => this.#onmessage(sender, msg);
     }
 
-    async onrequest(request, params) {
+    async onrequest(request, response, params) {
         this.logger.log(`Recieving request: (${request.method}) ${JSON.stringify(params)} ${JSON.stringify(request.location.searchParams)}`);
         this.logger.log("Sending success");
         return {
