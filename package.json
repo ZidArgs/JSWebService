@@ -14,7 +14,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@emcjs/core": "https://github.com/ZidArgs/emcJS-Core.git/#1.4.1",
+    "@emcjs/core": "https://github.com/ZidArgs/emcJS-Core.git/#1.4.2",
     "ws": "^7.2.1"
   },
   "devDependencies": {

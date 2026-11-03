@@ -62,7 +62,7 @@ export default class FileUploadService extends ServiceModule {
 
     #createTargetFolder() {
         if (!fs.existsSync(this.#targetFolder)) {
-            fs.mkdirSync(this.#targetFolder);
+            fs.mkdirSync(this.#targetFolder, {recursive: true});
         }
     }
 

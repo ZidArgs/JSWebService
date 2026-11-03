@@ -67,7 +67,7 @@ export default class FileStorageAPITokenManager extends AbstractTokenManager {
 
     #writeTokenList(tokenData) {
         if (!fs.existsSync(this.#strorageFileFolder)) {
-            fs.mkdirSync(this.#strorageFileFolder);
+            fs.mkdirSync(this.#strorageFileFolder, {recursive: true});
         }
         fs.writeFileSync(this.#strorageFilePath, JSON.stringify(tokenData));
     }
