@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
+import HTTPHeader from "@emcjs/core/enum/http/HTTPHeader.js";
 import ServiceModule from "../ServiceModule.js";
-import HTTPHeaderEnum from "../http/enum/HTTPHeaderEnum.js";
 import {
     getMultipartBoundary, parseMultipart
 } from "../utils/header/Multipart.js";
@@ -47,7 +47,7 @@ export default class FileUploadService extends ServiceModule {
             if (filename != null) {
                 const body = await request.resolveRawBody();
                 this.#createTargetFolder();
-                const contentType = request.getHeader(HTTPHeaderEnum.CONTENT_TYPE);
+                const contentType = request.getHeader(HTTPHeader.CONTENT_TYPE);
                 this.logger.log("file upload [raw] ->", `filename=${filename};type=${contentType};size=${body.length};`);
                 const filePath = path.resolve(this.#targetFolder, filename);
                 fs.writeFileSync(filePath, body);

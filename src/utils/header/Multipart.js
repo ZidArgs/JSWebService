@@ -4,7 +4,7 @@
 
 import FileData from "../../data/FileData.js";
 import MultipartParsingState from "../../enum/MultipartParsingState.js";
-import HTTPHeaderEnum from "../../http/enum/HTTPHeaderEnum.js";
+import HTTPHeader from "@emcjs/core/enum/http/HTTPHeader.js";
 import Request from "../../http/Request.js";
 
 const NEWLINE_CHAR = 0x0a; // \n
@@ -95,7 +95,7 @@ export function getMultipartBoundary(request) {
     if (!(request instanceof Request)) {
         throw new TypeError("request has to be an instance of Request");
     }
-    const header = request.getHeader(HTTPHeaderEnum.CONTENT_TYPE);
+    const header = request.getHeader(HTTPHeader.CONTENT_TYPE);
     const items = header.split(";");
     for (const item of items) {
         if (item.includes("boundary")) {

@@ -1,3 +1,5 @@
+import HTTPHeader from "@emcjs/core/enum/http/HTTPHeader.js";
+import ContentType from "../http/enum/ContentType.js";
 import {parseAuth} from "../utils/helper/BasicAuth.js";
 import AbstractRequestFilter from "./AbstractRequestFilter.js";
 
@@ -79,7 +81,7 @@ export default class BasicAuthRequestFilter extends AbstractRequestFilter {
                 challengeString += " realm=\"" + realmName + "\"";
             }
 
-            response.setHeader("WWW-Authenticate", challengeString);
+            response.setHeader(HTTPHeader.WWW_AUTHENTICATE, challengeString);
         }
 
         const responseContent = this.#unauthorizedResponse(request, params);
@@ -96,7 +98,7 @@ export default class BasicAuthRequestFilter extends AbstractRequestFilter {
             return;
         }
 
-        response.setHeader("Content-Type", "application/json; charset=utf-8")
+        response.setHeader(HTTPHeader.CONTENT_TYPE, ContentType.APPLICATION_JSON_UTF8)
             .send(JSON.stringify(responseContent));
     }
 

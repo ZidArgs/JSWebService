@@ -1,4 +1,6 @@
 import HTTP from "http";
+import HTTPHeader from "@emcjs/core/enum/http/HTTPHeader.js";
+import ContentType from "../http/enum/ContentType.js";
 import LoggableMixin from "../mixins/LoggableMixin.js";
 import WebSocketManager from "./manager/WebSocketManager.js";
 import ReceiverManager from "./manager/ReceiverManager.js";
@@ -162,7 +164,7 @@ export default class HTTPServer extends LoggableMixin() {
                         if (this.#logRequests) {
                             this.logger.log("responding with json");
                         }
-                        response.setHeader("Content-Type", "application/json; charset=utf-8")
+                        response.setHeader(HTTPHeader.CONTENT_TYPE, ContentType.APPLICATION_JSON_UTF8)
                             .send(JSON.stringify(res.json));
                     } else {
                         if (this.#logRequests) {
@@ -183,7 +185,7 @@ export default class HTTPServer extends LoggableMixin() {
             console.error(err);
             // TODO use error code handler if registered into ErrorCodeManager
             response.setStatusCode(500)
-                .setHeaders(createHeader(this.#enableCors, {type: "application/json; charset=utf-8"}))
+                .setHeaders(createHeader(this.#enableCors, {type: ContentType.APPLICATION_JSON_UTF8}))
                 .send(JSON.stringify({
                     url: request.url,
                     error: err

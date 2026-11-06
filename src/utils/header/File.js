@@ -1,4 +1,4 @@
-import HTTPHeaderEnum from "../../http/enum/HTTPHeaderEnum.js";
+import HTTPHeader from "@emcjs/core/enum/http/HTTPHeader.js";
 import Request from "../../http/Request.js";
 
 /**
@@ -11,7 +11,7 @@ export function getRequestFileName(request) {
     if (!(request instanceof Request)) {
         throw new TypeError("request has to be an instance of Request");
     }
-    const header = request.getHeader(HTTPHeaderEnum.CONTENT_DISPOSITION);
+    const header = request.getHeader(HTTPHeader.CONTENT_DISPOSITION);
     const items = header.split(";");
     for (const item of items) {
         if (item.includes("filename")) {

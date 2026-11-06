@@ -121,7 +121,7 @@ export default class MyServiceModule extends ServiceModule {
                 status: 200,
                 content: "<div>some html content</div>",
                 options: { /*optional*/
-                    type: "text/html; charset=utf-8",
+                    type: ContentType.TEXT_HTML_UTF8,
                     nocache: false,
                     length: 28,
                     language: "en"
@@ -132,7 +132,7 @@ export default class MyServiceModule extends ServiceModule {
                 status: 200,
                 stream: fs.createReadStream("myfile"),
                 options: { /*optional*/
-                    type: "text/plain; charset=utf-8",
+                    type: ContentType.TEXT_PLAIN_UTF8,
                     nocache: true
                 }
             };

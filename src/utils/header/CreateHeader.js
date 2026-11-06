@@ -1,15 +1,16 @@
-import HTTPHeaderEnum from "../../http/enum/HTTPHeaderEnum.js";
+import HTTPHeader from "@emcjs/core/enum/http/HTTPHeader.js";
+import ContentType from "../../http/enum/ContentType.js";
 
 export function createOptionsHeader(cors) {
     const res = {};
-    res[HTTPHeaderEnum.CONTENT_TYPE] = "text/plain; charset=utf-8";
+    res[HTTPHeader.CONTENT_TYPE] = ContentType.TEXT_PLAIN_UTF8.toString();
     if (cors) {
-        res[HTTPHeaderEnum.ACCESS_CONTROL_ALLOW_ORIGIN] = "*";
-        res[HTTPHeaderEnum.ACCESS_CONTROL_ALLOW_METHODS] = "GET, POST, PUT, DELETE, OPTIONS";
-        res[HTTPHeaderEnum.ACCESS_CONTROL_ALLOW_HEADERS] = "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range";
-        res[HTTPHeaderEnum.ACCESS_CONTROL_MAX_AGE] = "1728000";
+        res[HTTPHeader.ACCESS_CONTROL_ALLOW_ORIGIN] = "*";
+        res[HTTPHeader.ACCESS_CONTROL_ALLOW_METHODS] = "GET, POST, PUT, DELETE, OPTIONS";
+        res[HTTPHeader.ACCESS_CONTROL_ALLOW_HEADERS] = "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range";
+        res[HTTPHeader.ACCESS_CONTROL_MAX_AGE] = "1728000";
     }
-    res[HTTPHeaderEnum.CONTENT_LENGTH] = 0;
+    res[HTTPHeader.CONTENT_LENGTH] = 0;
     return res;
 }
 
@@ -19,25 +20,25 @@ export function createHeader(cors, options) {
         options = {};
     }
     if (options.nocache != null && options.nocache === true) {
-        res[HTTPHeaderEnum.CACHE_CONTROL] = "no-cache, no-store, must-revalidate";
-        res[HTTPHeaderEnum.EXPIRES] = "-1";
+        res[HTTPHeader.CACHE_CONTROL] = "no-cache, no-store, must-revalidate";
+        res[HTTPHeader.EXPIRES] = "-1";
     }
     if (options.type != null) {
-        res[HTTPHeaderEnum.CONTENT_TYPE] = options.type;
+        res[HTTPHeader.CONTENT_TYPE] = options.type.toString();
     } else {
-        res[HTTPHeaderEnum.CONTENT_TYPE] = "text/plain; charset=utf-8";
+        res[HTTPHeader.CONTENT_TYPE] = ContentType.TEXT_PLAIN_UTF8.toString();
     }
     if (options.length != null) {
-        res[HTTPHeaderEnum.CONTENT_LENGTH] = options.length;
+        res[HTTPHeader.CONTENT_LENGTH] = options.length;
     }
     if (options.language != null) {
-        res[HTTPHeaderEnum.CONTENT_LANGUAGE] = options.language;
+        res[HTTPHeader.CONTENT_LANGUAGE] = options.language;
     }
     if (cors) {
-        res[HTTPHeaderEnum.ACCESS_CONTROL_ALLOW_ORIGIN] = "*";
-        res[HTTPHeaderEnum.ACCESS_CONTROL_ALLOW_METHODS] = "GET, POST, PUT, DELETE, OPTIONS";
-        res[HTTPHeaderEnum.ACCESS_CONTROL_ALLOW_HEADERS] = "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range";
-        res[HTTPHeaderEnum.ACCESS_CONTROL_EXPOSE_HEADERS] = "Content-Length,Content-Range";
+        res[HTTPHeader.ACCESS_CONTROL_ALLOW_ORIGIN] = "*";
+        res[HTTPHeader.ACCESS_CONTROL_ALLOW_METHODS] = "GET, POST, PUT, DELETE, OPTIONS";
+        res[HTTPHeader.ACCESS_CONTROL_ALLOW_HEADERS] = "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range";
+        res[HTTPHeader.ACCESS_CONTROL_EXPOSE_HEADERS] = "Content-Length,Content-Range";
     }
     return res;
 }

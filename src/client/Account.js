@@ -1,4 +1,4 @@
-import Cookie from "@emcjs/core/data/storage/global/Cookie.js";
+import CookieManager from "@emcjs/core/data/storage/CookieManager.js";
 import Rest from "@emcjs/core/util/net/Rest.js";
 
 class Account {
@@ -27,7 +27,7 @@ class Account {
         });
         if (res != null) {
             if (res.success) {
-                Cookie.set("token", res.token);
+                await CookieManager.set("token", res.token);
             } else {
                 alert("incorrect login information");
             }
@@ -37,13 +37,13 @@ class Account {
     }
 
     async logout() {
-        const token = Cookie.get(token);
+        const token = await CookieManager.getValue(token);
         await Rest.post("/accounts/logout", {token: token});
-        Cookie.delete("token");
+        await CookieManager.delete("token");
     }
 
-    isLoggedIn() {
-        return Cookie.get("token") != "";
+    async isLoggedIn() {
+        return await CookieManager.getValue("token") != "";
     }
 
 }

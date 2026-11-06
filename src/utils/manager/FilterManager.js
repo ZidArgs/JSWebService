@@ -46,7 +46,6 @@ export default class FilterManager extends LoggableMixin() {
 
     async filter(request, response) {
         if (this.#requestFilters.size == 0) {
-            this.logger.log("no request filter registered");
             return true;
         }
         const filterList = this.get(request.internalPath);
