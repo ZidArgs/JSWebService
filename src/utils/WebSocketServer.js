@@ -1,9 +1,15 @@
 import WebSocket from "ws";
+import crypto from "crypto";
 import Ping from "./Ping.js";
-import {uuid4} from "@emcjs/core/util/helper/UniqueGenerator.js";
 
 const PING_OUT = 10000;
 const EMPTY_FN = function() {};
+
+// TODO outsource to nodeutils package
+function createUUID() {
+    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
+        (c ^ crypto.randomBytes(1)[0] & 15 >> c / 4).toString(16));
+}
 
 export default class WebSocketServer {
 
@@ -20,7 +26,7 @@ export default class WebSocketServer {
     constructor() {
         this.#server.on("connection", (ws) => {
             ws.isAlive = true;
-            ws.id = uuid4();
+            ws.id = createUUID();
             this.#sockets.set(ws.id, ws);
             ws.send(JSON.stringify({
                 type: "uuid",

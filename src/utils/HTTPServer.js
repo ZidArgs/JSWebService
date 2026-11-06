@@ -11,6 +11,7 @@ import {
 import {trimPathName} from "./helper/UriPath.js";
 import Request from "../http/Request.js";
 import Response from "../http/Response.js";
+import FilterManager from "./manager/FilterManager.js";
 
 // TODO add ErrorCodeManager to handle specific error codes
 export default class HTTPServer extends LoggableMixin() {
@@ -34,6 +35,8 @@ export default class HTTPServer extends LoggableMixin() {
     #localProxyManager = new LocalProxyManager();
 
     #permissionManager = new PermissionManager();
+
+    #filterManager = new FilterManager();
 
     constructor(port, options = {}) {
         super();
@@ -65,6 +68,7 @@ export default class HTTPServer extends LoggableMixin() {
         this.#rewriteRuleManager.logger = this.logger;
         this.#localProxyManager.logger = this.logger;
         this.#permissionManager.logger = this.logger;
+        this.#filterManager.logger = this.logger;
     }
 
     get logger() {
@@ -92,8 +96,22 @@ export default class HTTPServer extends LoggableMixin() {
             // TODO redirect to login page if it is defined and user is not logged in
             this.logger.log(`permission denied for request => ${requestPath}`);
             response.setStatusCode(403)
-                .setHeaders(createHeader(this.#enableCors, {type: "application/json; charset=utf-8"}))
-                .send(JSON.stringify({url: request.url}));
+                .setHeaders(createHeader(this.#enableCors))
+                .send();
+            this.logger.log("--- ABORT REQUEST ---");
+            this.logger.log("");
+            return;
+        }
+
+        if (!await this.#filterManager.filter(request, response)) {
+            this.logger.log(`filter failed for request => ${requestPath}`);
+            if (!response.isFinished()) {
+                response.setStatusCode(403)
+                    .setHeaders(createHeader(this.#enableCors))
+                    .send();
+            }
+            this.logger.log("--- ABORT REQUEST ---");
+            this.logger.log("");
             return;
         }
 
@@ -244,6 +262,10 @@ export default class HTTPServer extends LoggableMixin() {
 
     get permissions() {
         return this.#permissionManager;
+    }
+
+    get filters() {
+        return this.#filterManager;
     }
 
     #maybeWriteSession(request, response) {

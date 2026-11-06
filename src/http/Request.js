@@ -42,6 +42,8 @@ export default class Request {
 
     #body;
 
+    #data = new Map();
+
     constructor(request) {
         if (!(request instanceof http.IncomingMessage)) {
             throw new TypeError("request must be a IncomingMessage");
@@ -166,6 +168,14 @@ export default class Request {
         const newRequest = new Request(this.#request);
         newRequest.#internalPath = internalPath;
         return newRequest;
+    }
+
+    setData(name, value) {
+        this.#data.set(name, value);
+    }
+
+    getData(name) {
+        this.#data.get(name);
     }
 
 }

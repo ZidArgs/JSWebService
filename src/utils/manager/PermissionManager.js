@@ -67,6 +67,8 @@ export default class PermissionManager extends LoggableMixin() {
         pathName = decodeURI(pathName);
         const path = pathName.split("/");
         const uri = `/${pathName}`;
+
+        // get path permissions
         for (const config of this.#orderedPermissions) {
             if (path.length < config.length) {
                 continue;
@@ -90,6 +92,8 @@ export default class PermissionManager extends LoggableMixin() {
                 };
             }
         }
+
+        // get root permission
         if (this.#permissions.has("/")) {
             const config = this.#permissions.get("/");
             const params = {

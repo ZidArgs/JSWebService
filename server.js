@@ -3,6 +3,7 @@ import StaticService from "./src/services/StaticService.js";
 import FileUploadService from "./src/services/FileUploadService.js";
 import TestResponseService from "./src/services/TestResponseService.js";
 import LocalProxy from "./src/utils/LocalProxy.js";
+import BasicAuthRequestFilter from "./src/requestfilter/BasicAuthRequestFilter.js";
 
 const enableCors = process.argv.indexOf("-cors") >= 1;
 const port = process.argv.indexOf("-port") >= 1 ? process.argv[process.argv.indexOf("-port") + 1] : "12345";
@@ -21,6 +22,8 @@ remoteService.registerServiceModule(StaticService, "get_upload", {serveFolder: "
 
 remoteService.permissions.setPublic()
     .configurePath("get_upload").setPrivate();
+
+remoteService.filters.add("private", new BasicAuthRequestFilter({foobar: "barfoo"}));
 
 // public service
 const service = new WebService(port, {

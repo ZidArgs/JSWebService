@@ -72,6 +72,8 @@ export default class ReceiverManager extends LoggableMixin() {
         pathName = decodeURI(pathName);
         const path = pathName.split("/");
         const uri = `/${pathName}`;
+
+        // get path receivers
         for (const config of this.#orderedReceivers) {
             if (path.length < config.length) {
                 continue;
@@ -94,6 +96,8 @@ export default class ReceiverManager extends LoggableMixin() {
                 ];
             }
         }
+
+        // get root receiver
         if (this.#receivers.has("/")) {
             const config = this.#receivers.get("/");
             return [

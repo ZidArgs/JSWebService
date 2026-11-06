@@ -68,6 +68,10 @@ export default class WebService {
         return this.#server.permissions;
     }
 
+    get filters() {
+        return this.#server.filters;
+    }
+
     printServerInfoPanel() {
         const port = this.#server.port.toString();
         const path = this.#server.basePath.toString();
