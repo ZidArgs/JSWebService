@@ -1,5 +1,5 @@
 import http from "http";
-import {jsonParseSafe} from "@emcjs/core/util/helper/JSON.js";
+import {safeParseJSON} from "@emcjs/core/util/json/JSON.js";
 import {isURLPath} from "@emcjs/core/util/helper/CheckType.js";
 import ReadonlyURL from "./ReadonlyURL.js";
 import {resolveRequestBody} from "../utils/helper/Request.js";
@@ -143,7 +143,7 @@ export default class Request {
         if (this.#body == null) {
             const rawBody = await this.resolveRawBody();
             const content = rawBody.toString();
-            this.#body = jsonParseSafe(content) ?? content;
+            this.#body = safeParseJSON(content) ?? content;
         }
         return this.#body;
     }

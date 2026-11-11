@@ -1,6 +1,6 @@
 {
   "name": "jswebservice",
-  "version": "3.2.3",
+  "version": "3.2.4",
   "description": "helper for creating simple webservices",
   "author": "Denis Weiß (ZidArgs)",
   "license": "MIT",
@@ -14,7 +14,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@emcjs/core": "https://github.com/ZidArgs/emcJS-Core.git/#1.5.0",
+    "@emcjs/core": "https://github.com/ZidArgs/emcJS-Core.git/#1.6.0",
     "ws": "^7.2.1"
   },
   "devDependencies": {

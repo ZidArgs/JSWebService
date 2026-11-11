@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
+import {jsonReplacer_RegExp} from "@emcjs/core/util/json/values/JSONValue_RegExp.js";
 import ServiceModule from "../ServiceModule.js";
-import {jsonReplacer} from "@emcjs/core/util/helper/JSON.js";
 
 const DEFAULT_INDEX_FILES = ["index.html", "index.htm"];
 const DEFAULT_SERVE_FOLDER = "./static";
@@ -47,7 +47,7 @@ export default class StaticService extends ServiceModule {
         if (options.rewrites != null) {
             this.#rewrites = this.#resolveRewrites(options.rewrites);
         }
-        this.logger.log(`Registered rewrites: ${JSON.stringify(this.#rewrites, jsonReplacer, 4)}`);
+        this.logger.log(`Registered rewrites: ${JSON.stringify(this.#rewrites, jsonReplacer_RegExp, 4)}`);
         if (options.defaultIndex != null) {
             if (Array.isArray(options.defaultIndex)) {
                 this.#defaultIndex = options.defaultIndex;
